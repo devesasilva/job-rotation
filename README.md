@@ -29,5 +29,5 @@ Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de D
 | Nome     | GitHub |
 |----------|----------------------------------------|
 | Laíne    | [@devesasilva](https://github.com/devesasilva)     |
-| Melissa  | [@melissa](https://github.com/melissa)   |
-| Aline    | [@aline](https://github.com/aline) |
+| Melissa  | [@melissa](https://github.com/melissaromao)   |
+| Aline    | [@aline](https://github.com/RosendoAline) |
