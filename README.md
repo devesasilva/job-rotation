@@ -1,13 +1,33 @@
-# Job Rotation
- 
-Software de Job Rotation que possui como objetivo inovar a estratégia de desenvolvimento de
-talentos com potencial de crescimento profissional. A nossa plataforma pretedende automatizar o processo de
-rotação de funções, trazendo transparência, feedback e elementos gamificados para incentivar
-os colaboradores. 
+# 🔁 Job Rotation - Movimentando equipes, capacitando pessoas
 
-Nosso software também pretende impactar diretamente a
-retenção de talentos e a redução do “turnover” - Nome dado ao fluxo de entrada e saída de
-colaboradores em uma empresa. 
+Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma da Fatec Cotia. O software a ser desenvolvido possui foco em  ser inovador, auxiliando empresas na implementação de programas de Job Rotation, automatizando os processos de rotação de funções e aplicando elementos de gamificação para engajar os participantes, promovendo a capacitação de colaboradores e fornecendo feedbacks transparentes.
 
-O software está sendo desenvolvido como Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma 
-ministrado na Fatec Cotia.
+## 🚀 Tecnologias Utilizadas
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB
+- JWT (autenticação)
+
+### Frontend
+- React.js
+
+### Outros
+- Git e GitHub
+- Jira
+
+## 📁 Estrutura do Projeto
+
+## 🛠️ Como rodar localmente
+### Backend
+
+### Frontend
+## 🌱 Como contribuir
+
+## 👥 Integrantes
+| Nome     | GitHub |
+|----------|----------------------------------------|
+| Laíne    | [@devesasilva](https://github.com/devesasilva)     |
+| Melissa  | [@melissa](https://github.com/melissa)   |
+| Aline    | [@aline](https://github.com/aline) |
