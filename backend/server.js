@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
-
+const ConexaoDB = require('./config/db'); //importando o arquivo com config da database
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json()); // Aceita JSON no body das requisições
+
+ConexaoDB(); //chamando função que inicia o processo de conexão com a database
 
 // Roteador principal
 app.use(require('./src/routes/index'));
