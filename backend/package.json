@@ -1,0 +1,26 @@
+{
+  "name": "job-rotation",
+  "version": "1.0.0",
+  "description": "Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma da Fatec Cotia. O software a ser desenvolvido possui foco em  ser inovador, auxiliando empresas na implementação de programas de Job Rotation, automatizando os processos de rotação de funções e aplicando elementos de gamificação para engajar os participantes, promovendo a capacitação de colaboradores e fornecendo feedbacks transparentes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devesasilva/Job-Rotation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/devesasilva/Job-Rotation/issues"
+  },
+  "homepage": "https://github.com/devesasilva/Job-Rotation#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  }
+}
