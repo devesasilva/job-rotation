@@ -14,5 +14,5 @@ ConexaoDB(); //chamando função que inicia o processo de conexão com a databas
 app.use(require('./src/routes/index'));
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta http://localhost:${PORT}`);
 });
