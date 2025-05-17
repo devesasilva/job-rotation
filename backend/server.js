@@ -4,6 +4,8 @@ const app = express();
 const ConexaoDB = require('./config/db'); //importando o arquivo com config da database
 const PORT = process.env.PORT || 3001;
 
+const Usuario = require("./src/models/Usuario");
+
 app.use(express.json()); // Aceita JSON no body das requisições
 
 ConexaoDB(); //chamando função que inicia o processo de conexão com a database
@@ -12,5 +14,5 @@ ConexaoDB(); //chamando função que inicia o processo de conexão com a databas
 app.use(require('./src/routes/index'));
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta http://localhost:${PORT}`);
 });
