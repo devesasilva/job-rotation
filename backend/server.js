@@ -5,6 +5,7 @@ const ConexaoDB = require('./config/db'); //importando o arquivo com config da d
 const PORT = process.env.PORT || 3001;
 
 const Usuario = require("./src/models/Usuario");
+const Equipe = require("./src/models/Equipe");
 
 app.use(express.json()); // Aceita JSON no body das requisições
 
