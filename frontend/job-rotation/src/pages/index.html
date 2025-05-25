@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Rotation - Login</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="../style/style.css" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <!-- Header -->
+      <div class="header-section">
+        <h1 class="header-title">
+          JOB ROTATION
+          <i class="fas fa-sync-alt refresh-icon"></i>
+        </h1>
+      </div>
+  
+      <!-- Welcome Section -->
+      <div class="welcome-section">
+        <div class="welcome-text">Olá, bem vindo(a) de volta!</div>
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iNDAiIGN5PSIzMiIgcj0iMTIiIGZpbGw9IiM2QjdCODAiLz4KPHBhdGggZD0iTTIwIDYwQzIwIDUyLjI2ODQgMjYuMjY4NCA0NiAzNCA0Nkg0NkM1My43MzE2IDQ2IDYwIDUyLjI2ODQgNjAgNjBWNjhIMjBWNjBaIiBmaWxsPSIjNkI3QjgwIi8+Cjwvc3ZnPgo=" alt="Profile" class="profile-image">
+      </div>
+  
+      <!-- Form Section -->
+      <div class="form-section">
+        <form id="loginForm">
+          <div class="form-floating with-icon mb-3">
+            <i class="fas fa-envelope input-icon"></i>
+            <input type="email" class="form-control" id="email" placeholder="Digite seu e-mail" required>
+            <label for="email">Digite seu e-mail</label>
+          </div>
+  
+          <div class="form-floating with-icon mb-3">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" class="form-control" id="password" placeholder="Digite sua senha" required>
+            <label for="password">Digite sua senha</label>
+          </div>
+  
+          <a href="#" class="forgot-password">Esqueci senha</a>
+  
+          <button type="submit" class="login-btn">LOGIN</button>
+        </form>
+      </div>
+  
+      <!-- Google Section -->
+      <div class="google-section">
+        <div class="google-icon" onclick="googleLogin()">
+          <i class="fab fa-google"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Form validation and submission
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+  
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+  
+      // Basic validation
+      if (!email || !password) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+      }
+  
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert('Por favor, insira um e-mail válido.');
+        return;
+      }
+  
+      // Show loading state
+      const form = document.querySelector('.login-card');
+      form.classList.add('loading');
+  
+      // Simulate login process
+      setTimeout(() => {
+        form.classList.remove('loading');
+        alert(`Login realizado com sucesso!\nE-mail: ${email}`);
+        // Here you would typically redirect or make an API call
+      }, 2000);
+    });
+  
+    // Google login function
+    function googleLogin() {
+      alert('Redirecionando para login com Google...');
+      // Here you would integrate with Google OAuth
+    }
+  
+  
+  
+    // Forgot password functionality
+    document.querySelector('.forgot-password').addEventListener('click', function(e) {
+      e.preventDefault();
+      const email = prompt('Digite seu e-mail para recuperação de senha:');
+      if (email) {
+        alert(`Link de recuperação enviado para: ${email}`);
+      }
+    });
+  
+    // Add smooth animations on load
+    window.addEventListener('load', function() {
+      document.querySelector('.login-card').style.animation = 'slideUp 0.6s ease-out';
+    });
+  
+    // Mobile optimization - adjust for smaller screens
+    function handleResize() {
+      const container = document.querySelector('.login-container');
+      const body = document.body;
+  
+      if (window.innerWidth <= 576) {
+        container.style.padding = '0';
+        body.style.background = 'white';
+      } else {
+        container.style.padding = '20px';
+        body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      }
+    }
+  
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Call on load
+  </script>
+</body>
+</html>
