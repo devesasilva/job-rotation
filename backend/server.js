@@ -12,8 +12,7 @@ const Rodizio = require("./src/models/Rodizio");
 
 app.use(express.json());
 ConexaoDB();
-app.use(cors());
-
+app.use(cors({ origin: 'http://localhost:5174', credentials: true }));
 app.use(require("./src/routes/index"));
 
 app.listen(PORT, () => {
