@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-const authRoutes = require('./authRoutes');  // ajuste o caminho se necessário
+const authRoutes = require('./authRoutes');  
+const setorRoutes = require('./setorRoutes')
 
 // Rota simples de teste
 router.get('/', (req, res) => {
@@ -10,6 +11,7 @@ router.get('/', (req, res) => {
 
 // Rota de autenticação
 router.use('/auth', authRoutes);
+router.use('/setores', setorRoutes);
 
 module.exports = router;
 
