@@ -28,6 +28,7 @@ const rodizioSchema = new mongoose.Schema({
     }],
 }, { timestamps: true });
 
-const Rodizio = mongoose.model('Rodizio', rodizioSchema);
+const Rodizio = mongoose.models.Rodizio || mongoose.model('Rodizio', rodizioSchema);
+
 
 module.exports = Rodizio;
