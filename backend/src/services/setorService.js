@@ -1,4 +1,4 @@
-const Setor = require('../models/setor')
+const Setor = require('../models/Setor')
 
 const criarSetor = async (dados) => {
     const setor = new Setor(dados);
