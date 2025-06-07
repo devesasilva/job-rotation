@@ -1,4 +1,5 @@
 const Rodizio = require("../models/Rodizio");
+const Setor = require("../models/Setor");
 
 const criarRodizio = async (req, res) => {
   try {
