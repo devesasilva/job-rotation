@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
 });
 
 router.use('/auth', authRoutes);
-router.use('/equipes', authRoutes);
+router.use('/equipes', equipeRoutes);
 router.use('/rodizios', rodizioRoutes);
 router.use('/setores', setorRoutes);
 
