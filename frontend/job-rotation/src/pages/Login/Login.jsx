@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-import '../assets/style/login.css';
+import '../../assets/style/login.css';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -10,7 +10,7 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:3001/auth/login', {
+      const response = await axios.post('http://localhost:3001/login', {
         email,
         senha: senha, // O backend espera "senha", então use este nome
       });
@@ -20,7 +20,7 @@ function Login() {
 
       alert('Login realizado com sucesso!');
     } catch (error) {
-      alert('Erro no login: ' + (error.response?.data?.mensagem || 'Erro desconhecido'), error);
+      alert('Erro no login: ' + (error.response?.data?.mensagem || 'Erro desconhecido'), console);
     }
   };
 
