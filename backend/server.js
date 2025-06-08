@@ -1,20 +1,19 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const ConexaoDB = require("./config/db");
-const PORT = process.env.PORT;
-const cors = require('cors');
 
-const Usuario = require("./src/models/Usuario");
-const Equipe = require("./src/models/Equipe");
-const Setor = require("./src/models/Setor");
-const Rodizio = require("./src/models/Rodizio");
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
 ConexaoDB();
+
 app.use(cors({ origin: 'http://localhost:5174', credentials: true }));
-app.use(require("./src/routes/index"));
+app.use(express.json()); 
+
+app.use("/api", require("./src/routes/index")); 
+
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta http://localhost:${PORT}`);
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });

@@ -7,5 +7,6 @@ router.get("/listar", rodizioController.listarRodizios);
 router.get("/listar/:id", rodizioController.listarRodizioPorId);
 router.put("/editar/:id", rodizioController.atualizarRodizio);
 router.delete("/deletar/:id", rodizioController.deletarRodizio);
+router.get('/:id/sugestoes', rodizioController.sugerirAlocacoesRodizio );
 
 module.exports = router;
