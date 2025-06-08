@@ -154,52 +154,7 @@ body {
   transform: translateY(0);
 }
 
-.floating-shapes {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-}
 
-.shape {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  animation: float 6s ease-in-out infinite;
-}
-
-.shape:nth-child(1) {
-  width: 80px;
-  height: 80px;
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.shape:nth-child(2) {
-  width: 120px;
-  height: 120px;
-  top: 60%;
-  right: 10%;
-  animation-delay: 2s;
-}
-
-.shape:nth-child(3) {
-  width: 60px;
-  height: 60px;
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(180deg); }
-}
 
 @media (max-width: 480px) {
   .card {
