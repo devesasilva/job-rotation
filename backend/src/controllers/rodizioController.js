@@ -1,4 +1,5 @@
 const Rodizio = require("../models/Rodizio");
+const Setor = require("../models/Setor");
 
 const criarRodizio = async (req, res) => {
   try {
@@ -36,6 +37,22 @@ const listarRodizios = async (req, res) => {
   }
 };
 
+const listarRodizioPorId = async (req, res) => {
+  try {
+    const rodizio = await Rodizio.findById(req.params.id)
+      .populate("setor", "nome descricao")
+      .populate("membros.usuario", "nome email");
+
+    if (!rodizio) {
+      return res.status(404).json({ mensagem: "Rodízio não encontrado." });
+    }
+
+    res.status(200).json(rodizio);
+  } catch (error) {
+    res.status(500).json({ mensagem: "Erro ao buscar rodízio", erro: error.message });
+  }
+};
+
 const atualizarRodizio = async (req, res) => {
   try {
     const rodizio = await Rodizio.findByIdAndUpdate(req.params.id, req.body, {
@@ -69,6 +86,7 @@ const deletarRodizio = async (req, res) => {
 module.exports = {
   criarRodizio,
   listarRodizios,
+  listarRodizioPorId,
   atualizarRodizio,
   deletarRodizio,
 };
