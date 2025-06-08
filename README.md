@@ -21,7 +21,8 @@ Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de D
 
 ## 🛠️ Como rodar localmente
 ### Backend
-
+- `npm install` para instalar todas as dependências do projeto
+- `npm start` para rodar o servidor na porta 3001
 ### Frontend
 ## 🌱 Como contribuir
 

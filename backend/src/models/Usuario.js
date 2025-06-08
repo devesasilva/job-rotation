@@ -18,8 +18,20 @@ const usuarioSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  formacao: {
+    type: String,
+    required: true,
+  },
+  habilidades: [{
+    type: String,
+    required: true,
+  }],
+  dataInicialCargoAtual: {
+    type: Date,
+    required: true,
+  },
 }, { timestamps: true });
 
-const Usuario = mongoose.model('Usuario', usuarioSchema);
+const Usuario = mongoose.models.Usuario || mongoose.model('Usuario', usuarioSchema);
 
 module.exports = Usuario;

@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Register from './pages/Register/Register';
 import Login from './pages/Login/Login';
 import './styles/global.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 function App() {
   return (

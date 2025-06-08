@@ -28,6 +28,6 @@ const equipeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Equipe = mongoose.model("Equipe", equipeSchema);
+const Equipe = mongoose.models.Equipe || mongoose.model("Equipe", equipeSchema);
 
 module.exports = Equipe;

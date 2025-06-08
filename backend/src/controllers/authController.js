@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const register = async (req, res) => {
-    const { nome, email, senha } = req.body;
+    console.log('Corpo recebido:', req.body);
+    const { nome, email, senha, formacao, dataInicialCargoAtual } = req.body;
 
     try {
         // Verifica se já existe um usuário com o mesmo e-mail
@@ -20,12 +21,20 @@ const register = async (req, res) => {
         const novoUsuario = new Usuario({
             nome,
             email,
-            senha: senhaCriptografada
+            senha: senhaCriptografada,
+            formacao,
+            dataInicialCargoAtual,
         });
 
         await novoUsuario.save();
 
-        res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!' });
+        res.status(201).json({ 
+            mensagem: 'Usuário cadastrado com sucesso!',
+            usuario: {
+                _id: novoUsuario._id,
+                nome: novoUsuario.nome,
+            }
+        });
     } catch (error) {
         res.status(500).json({ mensagem: 'Erro no servidor.', erro: error.message });
     }

@@ -13,6 +13,6 @@ const setorSchema = new mongoose.Schema({
   descricao: String,
 }, { timestamps: true });
 
-const Setor = mongoose.model('Setor', setorSchema);
+const Setor = mongoose.models.Setor || mongoose.model('Setor', setorSchema);
 
 module.exports = Setor;

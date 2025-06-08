@@ -1,15 +1,18 @@
 const express = require('express');
 const router = express.Router();
 
-const authRoutes = require('./authRoutes');  // ajuste o caminho se necessário
+const authRoutes = require('./authRoutes');
+const equipeRoutes = require('./equipeRoutes');
+const rodizioRoutes = require('./rodizioRoutes');
+const setorRoutes = require('./setorRoutes');
 
-// Rota simples de teste
 router.get('/', (req, res) => {
   res.send('API está funcionando! 🚀');
 });
 
-// Rota de autenticação
 router.use('/auth', authRoutes);
+router.use('/equipes', equipeRoutes);
+router.use('/rodizios', rodizioRoutes);
+router.use('/setores', setorRoutes);
 
 module.exports = router;
-

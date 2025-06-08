@@ -26,8 +26,33 @@ const rodizioSchema = new mongoose.Schema({
         },
         funcao: String,
     }],
+    necessidades: [
+        {
+            habilidade: {
+                type: String,
+                required: true,
+            },
+            formacao: {
+                type: String,
+                required: true,
+            },
+            quantidade: {
+                type: Number,
+                required: true,
+            }
+        }
+    ],
+    dataInicio: {
+        type: Date,
+        required: true,
+    },
+    dataFim: {
+        type: Date,
+        required: true,
+    },
 }, { timestamps: true });
 
-const Rodizio = mongoose.model('Rodizio', rodizioSchema);
+const Rodizio = mongoose.models.Rodizio || mongoose.model('Rodizio', rodizioSchema);
+
 
 module.exports = Rodizio;
