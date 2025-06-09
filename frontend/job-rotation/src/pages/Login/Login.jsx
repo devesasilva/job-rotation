@@ -1,8 +1,10 @@
 import axios from 'axios';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../assets/style/login.css';
 
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [senha, setsenha] = useState('');
 
@@ -10,14 +12,14 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:3001/login', {
+      const response = await axios.post('http://localhost:3001/api/auth/login', {
         email,
         senha: senha, // O backend espera "senha", então use este nome
       });
-
+        
       // Salvar token no localStorage para futuras requisições protegidas
       localStorage.setItem('token', response.data.token);
-
+      navigate('/index');
       alert('Login realizado com sucesso!');
     } catch (error) {
       alert('Erro no login: ' + (error.response?.data?.mensagem || 'Erro desconhecido'), console);
