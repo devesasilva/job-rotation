@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';  // Importa o useNavigate
 import './Header.css';
-import '../../assets/style/login.css'
+import '../../assets/style/login.css';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate(); // inicializa o hook
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   const handleMenuItemClick = (item) => {
-    alert(`Navegando para: ${item}`);
-    setTimeout(() => setIsMenuOpen(false), 100);
+    if (item === 'Sair') {
+      // Remove o token e redireciona para login
+      localStorage.removeItem('token');
+      navigate('/login');
+    }else if (item === 'Cadastro'){
+      //
+      navigate('/register')
+    }
+     else {
+      alert(`Navegando para: ${item}`);
+      setTimeout(() => setIsMenuOpen(false), 100);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -37,7 +49,7 @@ const Header = () => {
       <div className={`sidebar ${isMenuOpen ? 'active' : ''}`}>
         <ul className="sidebar-menu">
           <li><a href="#" onClick={() => handleMenuItemClick('Perfil')}>👤 Meu Perfil</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Configurações')}>⚙️ Configurações</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Cadastro')}>⚙️ Cadastro</a></li>
           <li><a href="#" onClick={() => handleMenuItemClick('Histórico')}>📊 Histórico de Rotações</a></li>
           <li><a href="#" onClick={() => handleMenuItemClick('Ajuda')}>❓ Ajuda</a></li>
           <li><a href="#" onClick={() => handleMenuItemClick('Sobre')}>ℹ️ Sobre</a></li>
