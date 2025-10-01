@@ -1,5 +1,5 @@
 # 🔁 Job Rotation - Movimentando equipes, capacitando pessoas
-> Ambiente de Desenvolvimento
+### Ambiente de Desenvolvimento
 
 Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma da Fatec Cotia. O software a ser desenvolvido possui foco em  ser inovador, auxiliando empresas na implementação de programas de Job Rotation, automatizando os processos de rotação de funções e aplicando elementos de gamificação para engajar os participantes, promovendo a capacitação de colaboradores e fornecendo feedbacks transparentes.
 
