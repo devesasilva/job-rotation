@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/style/login.css';
+const API_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 function Login() {
   const navigate = useNavigate();
@@ -12,12 +13,11 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
+      const response = await axios.post(`${API_URL}/auth/login`, {
         email,
-        senha: senha, // O backend espera "senha", então use este nome
+        senha: senha, 
       });
         
-      // Salvar token no localStorage para futuras requisições protegidas
       localStorage.setItem('token', response.data.token);
       navigate('/index');
       alert('Login realizado com sucesso!');
