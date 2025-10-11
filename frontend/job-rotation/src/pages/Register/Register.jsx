@@ -1,4 +1,3 @@
-// src/pages/Register/Register.jsx
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header/Header';
 
