@@ -6,7 +6,7 @@ const equipeRoutes = require('./equipeRoutes');
 const rodizioRoutes = require('./rodizioRoutes');
 const setorRoutes = require('./setorRoutes');
 
-router.get('/', (req, res) => {
+router.get('/api', (req, res) => {
   res.send('API está funcionando! 🚀');
 });
 
