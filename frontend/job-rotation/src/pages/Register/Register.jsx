@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header/Header';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nome: '',
     sobrenome: '',
@@ -10,19 +13,18 @@ const Register = () => {
     senha: '',
     confirmacao: ''
   });
-  
+
   const [isTermsChecked, setIsTermsChecked] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'cpf') {
-      // Aplicar máscara do CPF
       let maskedValue = value.replace(/\D/g, '');
       maskedValue = maskedValue.replace(/(\d{3})(\d)/, '$1.$2');
       maskedValue = maskedValue.replace(/(\d{3})(\d)/, '$1.$2');
       maskedValue = maskedValue.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-      
+
       setFormData(prev => ({
         ...prev,
         [name]: maskedValue
@@ -41,29 +43,26 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     const { nome, sobrenome, cpf, email, senha, confirmacao } = formData;
-    
-    // Validações
+
     if (!nome || !sobrenome || !cpf || !email || !senha || !confirmacao) {
       alert('Por favor, preencha todos os campos!');
       return;
     }
-    
+
     if (senha !== confirmacao) {
       alert('As senhas não coincidem!');
       return;
     }
-    
+
     if (!isTermsChecked) {
       alert('Você deve concordar com os termos!');
       return;
     }
-    
-    // Simular cadastro bem-sucedido
+
     alert(`Conta criada com sucesso!\nBem-vindo(a), ${nome} ${sobrenome}!`);
-    
-    // Limpar formulário após sucesso
+
     setFormData({
       nome: '',
       sobrenome: '',
@@ -73,25 +72,26 @@ const Register = () => {
       confirmacao: ''
     });
     setIsTermsChecked(false);
+
+    navigate('/login');
   };
 
-  // Efeitos visuais nos inputs
   useEffect(() => {
     const inputs = document.querySelectorAll('.form-input');
-    
+
     const handleFocus = (e) => {
       e.target.parentElement.style.transform = 'scale(1.02)';
     };
-    
+
     const handleBlur = (e) => {
       e.target.parentElement.style.transform = 'scale(1)';
     };
-    
+
     inputs.forEach(input => {
       input.addEventListener('focus', handleFocus);
       input.addEventListener('blur', handleBlur);
     });
-    
+
     return () => {
       inputs.forEach(input => {
         input.removeEventListener('focus', handleFocus);
@@ -113,13 +113,14 @@ const Register = () => {
       <div className="main-content">
         <div className="card">
           <h2 className="card-title">Criar uma conta</h2>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-floating with-icon mb-3">
               <i className="fas fa-envelope input-icon"></i>
               <input
                 type="text"
                 id="nome"
+                name="nome"
                 value={formData.nome}
                 onChange={handleInputChange}
                 required
@@ -138,7 +139,7 @@ const Register = () => {
                 onChange={handleInputChange}
                 required
                 className="form-control"
-                placeholder="Digite seu Nome"
+                placeholder="Digite seu Sobrenome"
               />
               <label htmlFor="sobrenome">Sobrenome</label>
             </div>
@@ -192,9 +193,9 @@ const Register = () => {
               />
               <label htmlFor="confirmacao">Confirmação de Senha</label>
             </div>
-           
+
             <div className="checkbox-container">
-              <div 
+              <div
                 className={`checkbox ${isTermsChecked ? 'checked' : ''}`}
                 onClick={handleCheckboxToggle}
               />
