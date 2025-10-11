@@ -16,3 +16,45 @@ router.use('/rodizios', rodizioRoutes);
 router.use('/setores', setorRoutes);
 
 module.exports = router;
+
+/**
+ * @swagger
+ * tags:
+ *   name: API
+ *   description: Endpoints principais da API
+ */
+
+/**
+ * @swagger
+ * /api:
+ *   get:
+ *     summary: Testa se a API está funcionando
+ *     tags: [API]
+ *     responses:
+ *       200:
+ *         description: API funcionando
+ */
+
+/**
+ * @swagger
+ * /auth:
+ *   $ref: './authRoutes.js'   # Aqui você pode linkar documentação externa se quiser modularizar
+ */
+
+/**
+ * @swagger
+ * /equipes:
+ *   $ref: './equipeRoutes.js'
+ */
+
+/**
+ * @swagger
+ * /rodizios:
+ *   $ref: './rodizioRoutes.js'
+ */
+
+/**
+ * @swagger
+ * /setores:
+ *   $ref: './setorRoutes.js'
+ */
