@@ -13,7 +13,7 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await axios.post(`${API_URL}api/auth/login`, {
         email,
         senha: senha, 
       });
@@ -69,7 +69,7 @@ function Login() {
               <label htmlFor="senha">Digite sua senha</label>
             </div>
 
-            <a href="#" className="forgot-senha">Esqueci senha</a>
+            <a href="#" className="forgot-senha">Esqueci a senha</a>
 
             <button type="submit" className="login-btn">LOGIN</button>
           </form>
