@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/style/login.css';
+const API_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 function Login() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
+      const response = await axios.post(`${API_URL}api/auth/login`, {
         email,
         senha: senha, // O backend espera "senha", então use este nome
       });
@@ -69,7 +70,7 @@ function Login() {
               <label htmlFor="senha">Digite sua senha</label>
             </div>
 
-            <a href="#" className="forgot-senha">Esqueci senha</a>
+            <a href="#" className="forgot-senha">Esqueci a senha</a>
 
             <button type="submit" className="login-btn">LOGIN</button>
           </form>
