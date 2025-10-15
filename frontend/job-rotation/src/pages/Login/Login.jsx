@@ -15,10 +15,9 @@ function Login() {
     try {
       const response = await axios.post(`${API_URL}api/auth/login`, {
         email,
-        senha: senha, // O backend espera "senha", então use este nome
+        senha: senha, 
       });
         
-      // Salvar token no localStorage para futuras requisições protegidas
       localStorage.setItem('token', response.data.token);
       navigate('/index');
       alert('Login realizado com sucesso!');
