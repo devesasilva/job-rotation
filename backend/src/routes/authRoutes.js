@@ -26,7 +26,7 @@ module.exports = router;
 
 /**
  * @swagger
- * /register:
+ * /auth/register:
  *   post:
  *     summary: Registra um novo usuário
  *     tags: [Autenticação]
@@ -62,7 +62,7 @@ module.exports = router;
 
 /**
  * @swagger
- * /login:
+ * /auth/login:
  *   post:
  *     summary: Realiza login do usuário
  *     tags: [Autenticação]
@@ -102,7 +102,7 @@ module.exports = router;
 
 /**
  * @swagger
- * /protected:
+ * /auth/protected:
  *   get:
  *     summary: Rota protegida que exige autenticação
  *     tags: [Autenticação]
