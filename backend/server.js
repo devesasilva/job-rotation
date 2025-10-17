@@ -3,8 +3,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const ConexaoDB = require("./config/db");
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
+const {swaggerUi, swaggerSpec} = require('./config/swagger');
 
 const PORT = process.env.PORT || 3000;
 

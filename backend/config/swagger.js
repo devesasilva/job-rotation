@@ -1,4 +1,5 @@
 const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const options = {
   definition: {
@@ -8,9 +9,24 @@ const options = {
       version: '1.0.0',
       description: 'Documentação da API com Swagger',
     },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Insira o token JWT no formato: Bearer <seu_token>"
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
   apis: ['./src/routes/*.js'],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
-module.exports = swaggerSpec;
+module.exports = { swaggerUi, swaggerSpec };
