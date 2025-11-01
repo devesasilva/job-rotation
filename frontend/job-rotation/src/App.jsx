@@ -5,8 +5,6 @@ import Register from './pages/Register/Register';
 import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import './styles/global.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 
 function App() {
   return (
