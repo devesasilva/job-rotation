@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const setorController = require('../controllers/setorController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
+router.use(authMiddleware);
 router.post('/criar', setorController.criar);
 router.get('/listar', setorController.listar);
 router.get('/listar/:id', setorController.buscarPorId);
@@ -23,6 +25,8 @@ module.exports = router;
  *   post:
  *     summary: Cria um novo setor
  *     tags: [Setores]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -34,11 +38,21 @@ module.exports = router;
  *             properties:
  *               nome:
  *                 type: string
+ *                 example: Setor de Marketing
  *               descricao:
  *                 type: string
+ *                 example: Responsável pelas campanhas publicitárias
  *     responses:
  *       201:
  *         description: Setor criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensagem:
+ *                   type: string
+ *                   example: Setor criado com sucesso
  *       500:
  *         description: Erro no servidor
  */
@@ -49,6 +63,8 @@ module.exports = router;
  *   get:
  *     summary: Lista todos os setores
  *     tags: [Setores]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de setores
@@ -75,6 +91,8 @@ module.exports = router;
  *   get:
  *     summary: Busca um setor pelo ID
  *     tags: [Setores]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -108,6 +126,8 @@ module.exports = router;
  *   put:
  *     summary: Atualiza um setor pelo ID
  *     tags: [Setores]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -129,6 +149,14 @@ module.exports = router;
  *     responses:
  *       200:
  *         description: Setor atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensagem:
+ *                   type: string
+ *                   example: Setor atualizado com sucesso
  *       404:
  *         description: Setor não encontrado
  *       500:
@@ -141,6 +169,8 @@ module.exports = router;
  *   delete:
  *     summary: Deleta um setor pelo ID
  *     tags: [Setores]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -151,6 +181,14 @@ module.exports = router;
  *     responses:
  *       200:
  *         description: Setor removido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensagem:
+ *                   type: string
+ *                   example: Setor removido com sucesso
  *       404:
  *         description: Setor não encontrado
  *       500:

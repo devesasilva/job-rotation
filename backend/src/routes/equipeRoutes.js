@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const equipeController = require("../controllers/equipeController");
+const authMiddleware = require('../middlewares/authMiddleware');
 
+router.use(authMiddleware);
 router.post("/criar", equipeController.criarEquipe);
 router.get("/listar", equipeController.listarEquipes);
 router.get("/listar/:id", equipeController.listarEquipePorId);
@@ -23,6 +25,8 @@ module.exports = router;
  *   post:
  *     summary: Cria uma nova equipe
  *     tags: [Equipes]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -48,11 +52,9 @@ module.exports = router;
  *                   properties:
  *                     usuario:
  *                       type: string
- *                       description: ID do usuário membro
  *                       example: 634c9a4b0a1234567890abcd
  *                     funcao:
  *                       type: string
- *                       description: Função na equipe
  *                       example: Coordenador
  *     responses:
  *       201:
@@ -60,7 +62,11 @@ module.exports = router;
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Equipe'
+ *               type: object
+ *               properties:
+ *                 mensagem:
+ *                   type: string
+ *                   example: Equipe criada com sucesso
  *       400:
  *         description: Usuário não encontrado ou dados inválidos
  *       500:
@@ -70,6 +76,8 @@ module.exports = router;
  *   get:
  *     summary: Lista todas as equipes
  *     tags: [Equipes]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de equipes retornada com sucesso
@@ -78,7 +86,23 @@ module.exports = router;
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Equipe'
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   nome:
+ *                     type: string
+ *                   descricao:
+ *                     type: string
+ *                   membros:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         usuario:
+ *                           type: string
+ *                         funcao:
+ *                           type: string
  *       404:
  *         description: Nenhuma equipe encontrada
  *       500:
@@ -88,12 +112,14 @@ module.exports = router;
  *   get:
  *     summary: Busca uma equipe pelo ID
  *     tags: [Equipes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
  *         description: ID da equipe
  *     responses:
  *       200:
@@ -101,7 +127,23 @@ module.exports = router;
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Equipe'
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 nome:
+ *                   type: string
+ *                 descricao:
+ *                   type: string
+ *                 membros:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       usuario:
+ *                         type: string
+ *                       funcao:
+ *                         type: string
  *       404:
  *         description: Equipe não encontrada
  *       500:
@@ -111,12 +153,14 @@ module.exports = router;
  *   put:
  *     summary: Atualiza uma equipe pelo ID
  *     tags: [Equipes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
  *         description: ID da equipe
  *     requestBody:
  *       required: true
@@ -132,14 +176,23 @@ module.exports = router;
  *               membros:
  *                 type: array
  *                 items:
- *                   $ref: '#/components/schemas/Membro'
+ *                   type: object
+ *                   properties:
+ *                     usuario:
+ *                       type: string
+ *                     funcao:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Equipe atualizada com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Equipe'
+ *               type: object
+ *               properties:
+ *                 mensagem:
+ *                   type: string
+ *                   example: Equipe atualizada com sucesso
  *       404:
  *         description: Equipe não encontrada
  *       500:
@@ -149,12 +202,14 @@ module.exports = router;
  *   delete:
  *     summary: Remove uma equipe pelo ID
  *     tags: [Equipes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
  *         description: ID da equipe
  *     responses:
  *       200:
