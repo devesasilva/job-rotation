@@ -91,17 +91,6 @@ module.exports = router;
 
 /**
  * @swagger
- * /teste:
- *   get:
- *     summary: Testa se a rota GET está funcionando
- *     tags: [Autenticação]
- *     responses:
- *       200:
- *         description: Rota GET funcionando
- */
-
-/**
- * @swagger
  * /auth/protected:
  *   get:
  *     summary: Rota protegida que exige autenticação
