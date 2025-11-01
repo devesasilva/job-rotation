@@ -4,19 +4,6 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-
-router.get('/teste', (req, res) => {
-    res.send('Rota GET funcionando!');
-});
-
-router.get('/protected', authMiddleware, (req, res) => {
-    res.json({ message: 'Acesso autorizado', user: req.user })
-});
-
-module.exports = router;
-
 /**
  * @swagger
  * tags:
@@ -59,12 +46,13 @@ module.exports = router;
  *       500:
  *         description: Erro no servidor
  */
+router.post('/register', authController.register);
 
 /**
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Realiza login do usuário
+ *     summary: Realiza login do usuário e retorna um token JWT
  *     tags: [Autenticação]
  *     requestBody:
  *       required: true
@@ -88,12 +76,13 @@ module.exports = router;
  *       500:
  *         description: Erro no servidor
  */
+router.post('/login', authController.login);
 
 /**
  * @swagger
  * /auth/protected:
  *   get:
- *     summary: Rota protegida que exige autenticação
+ *     summary: Rota protegida que exige autenticação JWT
  *     tags: [Autenticação]
  *     security:
  *       - bearerAuth: []
@@ -101,5 +90,10 @@ module.exports = router;
  *       200:
  *         description: Acesso autorizado
  *       401:
- *         description: Acesso negado
+ *         description: Acesso negado. Token ausente ou inválido.
  */
+router.get('/protected', authMiddleware, (req, res) => {
+  res.json({ message: 'Acesso autorizado', user: req.user });
+});
+
+module.exports = router;
