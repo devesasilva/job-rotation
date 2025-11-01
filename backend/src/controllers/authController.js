@@ -7,17 +7,14 @@ const register = async (req, res) => {
     const { nome, email, senha, formacao, dataInicialCargoAtual } = req.body;
 
     try {
-        // Verifica se já existe um usuário com o mesmo e-mail
         const usuarioExistente = await Usuario.findOne({ email });
         if (usuarioExistente) {
             return res.status(400).json({ mensagem: 'E-mail já cadastrado.' });
         }
 
-        // Criptografa a senha
         const salt = await bcrypt.genSalt(10);
         const senhaCriptografada = await bcrypt.hash(senha, salt);
 
-        // Cria novo usuário
         const novoUsuario = new Usuario({
             nome,
             email,
@@ -30,10 +27,6 @@ const register = async (req, res) => {
 
         res.status(201).json({ 
             mensagem: 'Usuário cadastrado com sucesso!',
-            usuario: {
-                _id: novoUsuario._id,
-                nome: novoUsuario.nome,
-            }
         });
     } catch (error) {
         res.status(500).json({ mensagem: 'Erro no servidor.', erro: error.message });
@@ -44,19 +37,16 @@ const login = async (req, res) => {
     const { email, senha } = req.body;
 
     try {
-        // Verifica se o usuário existe
         const usuario = await Usuario.findOne({ email });
         if (!usuario) {
             return res.status(400).json({ mensagem: 'Usuário não encontrado.' });
         }
 
-        // Verifica a senha
         const senhaValida = await bcrypt.compare(senha, usuario.senha);
         if (!senhaValida) {
             return res.status(400).json({ mensagem: 'Senha incorreta.' });
         }
 
-        // Gera token JWT
         const token = jwt.sign(
             { id: usuario._id, email: usuario.email },
             process.env.JWT_SECRET,
