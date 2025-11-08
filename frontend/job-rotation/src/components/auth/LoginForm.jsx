@@ -14,7 +14,7 @@ function UnderlineInput({ id, label, type = 'text', value, onChange, placeholder
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full bg-transparent border-0 border-b border-gray-300 focus:border-b-2 focus:border-gray-500 outline-none py-2 placeholder:text-gray-300 text-gray-700"
+        className="w-full bg-transparent border-0 border-b border-gray-300 focus:border-b-2 focus:border-gray-500 outline-none py-2 placeholder:text-gray-400 text-gray-700"
       />
     </div>
   );
@@ -71,7 +71,7 @@ export default function LoginForm() {
 
       {errorMsg && <div className="text-center text-sm text-red-600 mb-4">{errorMsg}</div>}
 
-      <button type="submit" disabled={loading} className="w-full bg-[#07020d] text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-gray-800 transition disabled:opacity-60">
+      <button type="submit" disabled={loading} className="w-full bg-[#07020d] text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-gray-800 cursor-pointer transition disabled:opacity-60">
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
     </form>
