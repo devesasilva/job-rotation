@@ -20,15 +20,15 @@ const usuarioSchema = new mongoose.Schema({
   },
   formacao: {
     type: String,
-    required: true,
+    required: false,
   },
   habilidades: [{
     type: String,
-    required: true,
+    required: false,
   }],
   dataInicialCargoAtual: {
     type: Date,
-    required: true,
+    required: false,
   },
 }, { timestamps: true });
 
