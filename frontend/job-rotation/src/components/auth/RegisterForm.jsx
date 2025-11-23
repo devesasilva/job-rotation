@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const API = import.meta.env.VITE_BACKEND_API;
 
@@ -70,12 +71,16 @@ export default function RegisterForm() {
                 <UnderlineInput id="email" label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="meuemail@example.com" />
                 <UnderlineInput id="senha" label="Senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="********" />
             </div>
-
             {errorMsg && <div className="text-center text-sm text-red-600 mb-4">{errorMsg}</div>}
 
             <button type="submit" disabled={loading} className="w-full bg-[#07020d] text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-gray-800 cursor-pointer transition disabled:opacity-60">
                 {loading ? 'Cadastrando...' : 'Cadastrar'}
             </button>
+            <Link
+                to="/login"
+                className="mt-4 text-center text-sm font-medium text-[#0b0a0f]/100 cursor-pointer hover:text-gray-600 transition-colors duration-200 block mx-auto">
+                Eu já tenho uma conta
+            </Link>
         </form>
     );
 }
