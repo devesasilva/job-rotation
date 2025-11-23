@@ -24,19 +24,21 @@ const criarEquipe = async (req, res) => {
 const listarEquipes = async (req, res) => {
     try {
         const userId = req.userId; 
+        
         const equipes = await Equipe.find({
             "membros.usuario": userId 
         }).populate("membros.usuario", "nome email");
+
         if (equipes.length === 0) {
             return res.status(200).json([]); 
         }
+
         res.status(200).json(equipes);
     } catch (error) {
         console.error("Erro ao listar equipes filtradas:", error);
         res.status(500).json({ mensagem: "Erro ao listar equipes", erro: error.message });
     }
 };
-
 const atualizarEquipe = async (req, res) => {
     try {
         const equipe = await Equipe.findByIdAndUpdate(req.params.id, req.body, { new: true });
