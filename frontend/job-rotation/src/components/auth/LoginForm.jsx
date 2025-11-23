@@ -72,7 +72,7 @@ export default function LoginForm() {
 
       {errorMsg && <div className="text-center text-sm text-red-600 mb-4">{errorMsg}</div>}
 
-      <button type="submit" disabled={loading} className="w-full bg-[#07020d] text-white py-4 rounded-2xl font-semibold text-lg shadow-lg hover:bg-gray-800 cursor-pointer transition disabled:opacity-60">
+      <button type="submit" disabled={loading} className="w-full bg-[#07020d] text-white py-4 rounded-full font-semibold text-lg shadow-lg hover:bg-gray-800 cursor-pointer transition disabled:opacity-60">
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
       <Link
