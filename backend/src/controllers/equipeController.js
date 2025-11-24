@@ -25,10 +25,6 @@ const listarEquipes = async (req, res) => {
     try {
         const equipes = await Equipe.find().populate("membros.usuario", "nome email");
 
-        if (equipes.length === 0) {
-            return res.status(404).json({ mensagem: "Nenhuma equipe encontrada." });
-        }
-
         res.status(200).json(equipes);
     } catch (error) {
         res.status(500).json({ mensagem: "Erro ao listar equipes", erro: error.message });

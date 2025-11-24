@@ -12,6 +12,7 @@ const criar = async (req, res) => {
 const listar = async (req, res) => {
     try {
         const setores = await setorService.listarSetores();
+        res.status(200).json(setores);
     } catch (error) {
         res.status(500).json({ mensagem: error.message })
     }
