@@ -9,7 +9,7 @@ const listarSetores = async () => {
     return await Setor.find().populate('equipe');
 };
 
-const buscarPorId = async (id) => {
+const buscarSetorPorId = async (id) => {
     return await Setor.findById(id).populate('equipe');  
 };
 
@@ -24,7 +24,7 @@ const deletarSetor = async (id) => {
 module.exports = {
     criarSetor,
     listarSetores,
-    buscarPorId,
+    buscarSetorPorId,
     atualizarSetor,
     deletarSetor
 };

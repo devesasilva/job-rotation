@@ -27,13 +27,13 @@ describe("SetorController", () => {
     expect(res.statusCode).toBe(200);
   });
 
-  test("buscarPorId - setor não encontrado", async () => {
+  test("buscarSetorPorId - setor não encontrado", async () => {
     setorService.buscarPorId.mockResolvedValue(null);
 
     const req = httpMocks.createRequest({ params: { id: "1" } });
     const res = httpMocks.createResponse();
 
-    await setorController.buscarPorId(req, res);
+    await setorController.buscarSetorPorId(req, res);
 
     expect(res.statusCode).toBe(404);
   });
