@@ -3,21 +3,39 @@ const Usuario = require("../models/Usuario");
 
 const criarEquipe = async (req, res) => {
     try {
-        const { nome, descricao, membros } = req.body;
+        const userId = req.userId; 
 
-        for (let membro of membros) {
-            const usuarioExistente = await Usuario.findById(membro.usuario);
-            if (!usuarioExistente) {
-                return res.status(400).json({ mensagem: `Usuário ${membro.usuario} não encontrado` });
-            }
+        if (!userId) {
+            return res.status(401).json({ mensagem: "Usuário não autenticado ou ID do usuário ausente." });
         }
 
-        const equipe = new Equipe({ nome, descricao, membros });
+        const { nome, descricao } = req.body;
+
+        if (!nome) {
+             return res.status(400).json({ mensagem: "O nome da equipe é obrigatório." });
+        }
+
+        const membrosIniciais = [
+            {
+                usuario: userId,
+                perfil: 'admin', 
+            }
+        ];
+
+        const equipe = new Equipe({ nome, descricao, membros: membrosIniciais });
         await equipe.save();
 
         res.status(201).json(equipe);
     } catch (error) {
-        res.status(500).json({ mensagem: "Erro ao criar equipe", erro: error.message });
+        if (error.name === 'ValidationError') {
+            const mensagens = Object.values(error.errors).map(err => err.message).join(', ');
+            return res.status(400).json({ 
+                mensagem: "Erro de validação ao criar equipe: " + mensagens, 
+                erro: error.message 
+            });
+        }
+        console.error("Erro ao criar equipe:", error);
+        res.status(500).json({ mensagem: "Erro interno ao criar equipe", erro: error.message });
     }
 };
 
@@ -39,6 +57,7 @@ const listarEquipes = async (req, res) => {
         res.status(500).json({ mensagem: "Erro ao listar equipes", erro: error.message });
     }
 };
+
 const atualizarEquipe = async (req, res) => {
     try {
         const equipe = await Equipe.findByIdAndUpdate(req.params.id, req.body, { new: true });
