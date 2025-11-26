@@ -1,7 +1,7 @@
 // services/rodizioService.js
 const Usuario = require('../models/Usuario');
 const Rodizio = require('../models/Rodizio');
-const Setor = require('../models/Setor');
+//const Setor = require('../models/Setor');
 
 async function sugerirAlocacoes(rodizioId) {
   const rodizio = await Rodizio.findById(rodizioId).populate('setor');
