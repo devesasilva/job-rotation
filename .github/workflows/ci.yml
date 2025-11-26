@@ -60,4 +60,4 @@ jobs:
         run: npm install
         
       - name: Rodar Teste de Carga k6
-        run: npm run k6-perf
+        run: k6 run ./tests/performance/load-test.js
