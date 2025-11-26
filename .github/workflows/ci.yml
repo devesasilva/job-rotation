@@ -48,10 +48,14 @@ jobs:
 
       - name: Instalar k6 no Runner
         run: |
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D7A31D0307376CB7E
+          
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          
           sudo apt-get update
-          sudo apt-get install -y k6
+          sudo apt-get install k6 -y
 
-      - name: Instalar dependências do backend
+      - name: Instalar dependências do backend (Node.js)
         run: npm install
         
       - name: Rodar Teste de Carga k6
