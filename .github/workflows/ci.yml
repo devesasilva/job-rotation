@@ -8,32 +8,51 @@ on:
 
 jobs:
   test:
+    name: Testes Unitários, Integração, Infraestrutura (Jest) e Build
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instalar Node
+      - name: Configurar Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Instalar dependências
+      - name: Instalar dependências do backend
         run: npm install
 
-      - name: Rodar testes
+      - name: Rodar Testes Jest
         run: npm test
-  
-  performance-test:
-    needs: test
+
+  performance-tests: 
+    name: Teste de Performance (k6)
+    needs: test 
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+
     steps:
       - uses: actions/checkout@v4
       
-      - name: Instalar k6
-        run: |
-          sudo apt update
-          sudo apt install -y k6
+      - name: Configurar Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
+      - name: Instalar k6 no Runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Instalar dependências do backend
+        run: npm install
+        
       - name: Rodar Teste de Carga k6
-        run: k6 run tests/performance/load-test.js
+        run: npm run k6-perf
