@@ -23,3 +23,17 @@ jobs:
 
       - name: Rodar testes
         run: npm test
+  
+  performance-test:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Instalar k6
+        run: |
+          sudo apt update
+          sudo apt install -y k6
+
+      - name: Rodar Teste de Carga k6
+        run: k6 run tests/performance/load-test.js
