@@ -30,7 +30,7 @@ jobs:
         run: npm test
 
   performance-tests: 
-    name: Teste de Performance (k6)
+    name: Teste de Performance (K6)
     needs: test 
     runs-on: ubuntu-latest
     
@@ -46,17 +46,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Instalar k6 no Runner
+      - name: Instalar K6 no Runner
         run: |
-          sudo apt-get update
-          sudo apt-get install -y curl apt-transport-https
+          curl -sL https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tar.gz
           
-          curl -sL https://key.k6.io/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/k6-archive-keyring.gpg
+          tar -xzf k6.tar.gz
           
-          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo mv k6-v0.49.0-linux-amd64/k6 /usr/local/bin/k6
           
-          sudo apt-get update
-          sudo apt-get install k6 -y
+          k6 version
 
       - name: Instalar dependências do backend (Node.js)
         run: npm install
