@@ -9,11 +9,10 @@ jest.mock("../../src/models/Equipe");
 describe("EquipeController", () => {
   afterEach(() => jest.clearAllMocks());
 
-  test("criarEquipe - usuário não existe", async () => {
-    Usuario.findById.mockResolvedValue(null);
-
+  test("criarEquipe - sem nome retorna 400", async () => {
     const req = httpMocks.createRequest({
-      body: { nome: "Equipe", membros: [{ usuario: "1" }] }
+      user: { id: "userId123" },
+      body: {}
     });
     const res = httpMocks.createResponse();
 
@@ -22,20 +21,24 @@ describe("EquipeController", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test("criarEquipe - sucesso", async () => {
-    Usuario.findById.mockResolvedValue({ nome: "User" });
-    Equipe.prototype.save = jest.fn();
+  test("criarEquipe - sucesso com nome e usuário do token", async () => {
+    Equipe.prototype.save = jest.fn().mockResolvedValue(true);
 
     const req = httpMocks.createRequest({
-      body: {
-        nome: "Equipe",
-        membros: [{ usuario: "1" }],
-      }
+      user: { id: "userId123" },
+      body: { nome: "Equipe X", descricao: "Desc" }
     });
     const res = httpMocks.createResponse();
 
     await equipeController.criarEquipe(req, res);
 
     expect(res.statusCode).toBe(201);
+  });
+
+  test("listarEquipes - sem usuário no token retorna 401", async () => {
+    const req = httpMocks.createRequest();
+    const res = httpMocks.createResponse();
+    await equipeController.listarEquipes(req, res);
+    expect(res.statusCode).toBe(401);
   });
 });

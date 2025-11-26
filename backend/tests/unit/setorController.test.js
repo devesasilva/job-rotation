@@ -28,7 +28,7 @@ describe("SetorController", () => {
   });
 
   test("buscarSetorPorId - setor não encontrado", async () => {
-    setorService.buscarPorId.mockResolvedValue(null);
+    setorService.buscarSetorPorId.mockResolvedValue(null);
 
     const req = httpMocks.createRequest({ params: { id: "1" } });
     const res = httpMocks.createResponse();

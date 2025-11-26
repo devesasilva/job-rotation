@@ -18,7 +18,7 @@ module.exports.clear = async () => {
 module.exports.disconnect = async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
+    await mongoose.connection.close(true);
   }
   if (mongoServer) {
     await mongoServer.stop();
