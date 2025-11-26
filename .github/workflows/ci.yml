@@ -46,9 +46,12 @@ jobs:
         with:
           node-version: 18
 
-      - name: Instalar k6 no Runner
+      - name: Instalar k6 no Runner (MÉTODO CURL + APT - CORREÇÃO FINAL)
         run: |
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D7A31D0307376CB7E
+          sudo apt-get update
+          sudo apt-get install -y curl apt-transport-https
+          
+          curl -s https://key.k6.io/gpg.key | gpg --dearmor | sudo tee /usr/share/keyrings/k6-archive-keyring.gpg >/dev/null
           
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           
