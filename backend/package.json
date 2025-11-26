@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --runInBand"
+    "k6-perf": "k6 run tests/performance/load-test.js"
   },
   "repository": {
     "type": "git",
