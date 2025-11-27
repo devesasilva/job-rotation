@@ -87,7 +87,7 @@ jobs:
         run: npm install
         
       - name: Rodar Teste de Carga k6
-        run: k6 run ../tests/performance/load-test.js
+        run: k6 run ./tests/performance/load-test.js
 
   monitoring-checks:
     name: Verificação de Monitoramento (Sentry)
