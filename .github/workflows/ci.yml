@@ -54,7 +54,7 @@ jobs:
       - name: Snyk Security Scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --file=backend/package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116
+        run: snyk test --file=package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116
           
   performance-tests: 
     name: Teste de Performance K6
