@@ -96,11 +96,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Check SENTRY_DSN Configuration
+      - name: Check SENTRY_DSN Configuration 
         run: |
           if [ -z "${{ secrets.SENTRY_DSN }}" ]; then
             echo "ERRO: Variável SENTRY_DSN não está configurada no GitHub Secrets."
             echo "A integração com Sentry para monitoramento de erros em produção está incompleta."
             exit 1
           fi
-          echo "SENTRY_DSN OK! O monitoramento de erros está pronto para uso na aplicação."
+          echo "SENTRY_DSN OK! O monitoramento de erros está pronto para uso na aplicação!"
