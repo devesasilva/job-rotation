@@ -53,9 +53,12 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
         with:
-          command: test
-          args: --file=backend/package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116
-  
+          command: test
+          args: |
+            --file=backend/package.json
+            --dev
+            --exclude-vulns=SNYK-JS-INFLIGHT-6095116
+          
   performance-tests: 
     name: Teste de Performance K6
     needs: test 
@@ -87,7 +90,7 @@ jobs:
         run: npm install
         
       - name: Rodar Teste de Carga k6
-        run: k6 run ./tests/performance/load-test.js
+        run: k6 run ../tests/performance/load-test.js
 
   monitoring-checks:
     name: Verificação de Monitoramento (Sentry)
