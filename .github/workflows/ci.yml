@@ -57,7 +57,7 @@ jobs:
           args: --dev
           
   performance-tests: 
-    name: Teste de Performance (K6)
+    name: Teste de Performance K6
     needs: test 
     runs-on: ubuntu-latest
     
