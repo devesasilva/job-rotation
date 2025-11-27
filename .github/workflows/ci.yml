@@ -48,16 +48,13 @@ jobs:
       - name: Rodar npm audit (Nível Moderado)
         run: npm audit --audit-level=moderate
         
-      - name: Snyk Security Scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
-        with:
-          command: test
-          args: |
-            --file=backend/package.json
-            --dev
-            --exclude-vulns=SNYK-JS-INFLIGHT-6095116
+       - name: Instalar Snyk CLI
+        run: npm install -g snyk
+      
+       - name: Snyk Security Scan
+         env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+         run: snyk test --file=backend/package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116
           
   performance-tests: 
     name: Teste de Performance K6
