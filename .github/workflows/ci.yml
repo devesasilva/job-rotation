@@ -53,8 +53,9 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
         with:
-          command: test
-          args: --file=backend/package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116  
+          command: test
+          args: --file=backend/package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116
+  
   performance-tests: 
     name: Teste de Performance K6
     needs: test 
