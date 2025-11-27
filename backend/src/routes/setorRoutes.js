@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.use(authMiddleware);
 router.post('/criar', setorController.criar);
 router.get('/listar', setorController.listar);
+router.get('/listar/equipe/:equipeId', setorController.listarSetoresPorEquipeId); // NOVA ROTA
 router.get('/listar/:id', setorController.buscarSetorPorId);
 router.put('/editar/:id', setorController.atualizar);
 router.delete('/deletar/:id', setorController.deletar);
