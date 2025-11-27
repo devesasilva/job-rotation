@@ -28,7 +28,34 @@ jobs:
 
       - name: Rodar Testes Jest
         run: npm test
+  
+  security-tests:
+    name: Testes de Segurança (npm audit/Snyk)
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Instalar dependências
+        run: npm install
 
+      - name: Rodar npm audit (Nível Moderado)
+        run: npm audit --audit-level=moderate
+        
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
+        with:
+          command: test
+          args: --dev
+          
   performance-tests: 
     name: Teste de Performance (K6)
     needs: test 
@@ -61,3 +88,19 @@ jobs:
         
       - name: Rodar Teste de Carga k6
         run: k6 run ./tests/performance/load-test.js
+
+  monitoring-checks:
+    name: Verificação de Monitoramento (Sentry)
+    needs: [test, security-tests, performance-tests] 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check SENTRY_DSN Configuration
+        run: |
+          if [ -z "${{ secrets.SENTRY_DSN }}" ]; then
+            echo "ERRO: Variável SENTRY_DSN não está configurada no GitHub Secrets."
+            echo "A integração com Sentry para monitoramento de erros em produção está incompleta."
+            exit 1
+          fi
+          echo "SENTRY_DSN OK! O monitoramento de erros está pronto para uso na aplicação."
