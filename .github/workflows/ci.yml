@@ -54,8 +54,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
         with:
           command: test
-          args: --dev
-          
+          args: --file=backend/package.json --dev          
   performance-tests: 
     name: Teste de Performance K6
     needs: test 
