@@ -3,182 +3,167 @@ const Equipe = require("../models/Setor");
 const Usuario = require("../models/Usuario")
 const { sugerirAlocacoes } = require("../services/rodizioService")
 
+// [ATUALIZADO] Valida se membros é um array de strings não vazio (nomes)
 const validarMembros = async (membros) => {
-  if (!membros || !Array.isArray(membros) || membros.length === 0) {
-    return { valid: false, message: 'Membros são obrigatórios e devem ser um array não vazio.' };
-  }
-  if (membros.some(m => !m.usuario)) {
-    return { valid: false, message: 'Todos os membros devem ter um ID de usuário associado.' };
-  }
-  const usuarioIds = membros.map(m => m.usuario);
-  const usuariosEncontrados = await Usuario.find({ _id: { $in: usuarioIds } });
-  if (usuariosEncontrados.length !== usuarioIds.length) {
-    return { valid: false, message: 'Um ou mais usuários referenciados não foram encontrados.' };
-  }
-  return { valid: true };
+  if (!membros || !Array.isArray(membros) || membros.length === 0) {
+    return { valid: false, message: 'Membros são obrigatórios e devem ser um array não vazio.' };
+  }
+  // Removemos a verificação de ID de usuário, agora apenas valida se são strings
+  if (membros.some(m => typeof m !== 'string' || m.trim().length === 0)) {
+    return { valid: false, message: 'Todos os membros devem ser nomes válidos (strings).' };
+  }
+  return { valid: true };
 };
 
-const validarNecessidades = (necessidades) => {
-  if (!necessidades || !Array.isArray(necessidades) || necessidades.length === 0) {
-    return { valid: false, message: 'Necessidades são obrigatórias e devem ser um array não vazio.' };
-  }
-  for (const necessidade of necessidades) {
-    if (!necessidade.habilidade || necessidade.habilidade.trim() === '') {
-        return { valid: false, message: 'Toda necessidade deve ter uma descrição de habilidade válida.' };
-    }
-    if (typeof necessidade.slots !== 'number' || necessidade.slots <= 0) {
-        return { valid: false, message: `A necessidade '${necessidade.habilidade}' deve ter um número positivo de slots.` };
-    }
+// [ADICIONADO] Valida se funções é um array de strings não vazio (cargos)
+const validarFuncoes = (funcoes) => {
+  if (!funcoes || !Array.isArray(funcoes) || funcoes.length === 0) {
+    return { valid: false, message: 'Funções são obrigatórias e devem ser um array não vazio.' };
   }
-  return { valid: true };
+  if (funcoes.some(f => typeof f !== 'string' || f.trim().length === 0)) {
+    return { valid: false, message: 'Todas as funções devem ser nomes válidos (strings).' };
+  }
+  return { valid: true };
+};
+
+// [ATUALIZADO] Necessidades temporariamente ignoradas conforme sua solicitação
+const validarNecessidades = (necessidades) => {
+  return { valid: true };
 };
 
 // =========================================================================
-// FUNÇÃO ADICIONADA: criarRodizio (Corrige o erro 400 Bad Request)
+// FUNÇÃO: criarRodizio (Compatível com o Schema Simplificado)
 // =========================================================================
 const criarRodizio = async (req, res) => {
   try {
-    // O ID da equipe (Setor) vem dos parâmetros da URL
-    const equipeId = req.params.equipeId; 
-    const { titulo, descricao, dataInicio, dataFim, periodoRotacaoEmDias, membros, necessidades } = req.body;
+    // Campos esperados pelo Frontend e compatíveis com o Schema: nome, duracaoTurno, membros, funcoes
+    const { nome, dataInicio, dataFim, duracaoTurno, membros, funcoes } = req.body;
 
-    // 1. VALIDAR A EXISTÊNCIA DA EQUIPE/SETOR
-    const equipe = await Equipe.findById(equipeId);
-    if (!equipe) {
-      // Retorna a mensagem de erro que o cliente estava recebendo, garantindo que o ID exista.
-      return res.status(400).json({ mensagem: "A Equipe especificada não foi encontrada." });
+    // 1. Validação Básica
+    if (!nome || !dataInicio || !dataFim || !duracaoTurno || !membros || !funcoes) {
+      return res.status(400).json({ mensagem: "Todos os campos obrigatórios (nome, datas, duração, membros, funções) devem ser preenchidos." });
     }
 
-    // 2. Validações básicas e de membros/necessidades
-    if (!titulo || !dataInicio || !dataFim || !periodoRotacaoEmDias) {
-      return res.status(400).json({ mensagem: "Campos obrigatórios ausentes (título, datas, período)." });
-    }
-
+    // 2. Validação de Membros (agora strings)
     const validacaoMembros = await validarMembros(membros);
     if (!validacaoMembros.valid) {
       return res.status(400).json({ mensagem: validacaoMembros.message });
     }
 
-    const validacaoNecessidades = validarNecessidades(necessidades);
-    if (!validacaoNecessidades.valid) {
-      return res.status(400).json({ mensagem: validacaoNecessidades.message });
+    // 3. Validação de Funções (agora strings)
+    const validacaoFuncoes = validarFuncoes(funcoes);
+    if (!validacaoFuncoes.valid) {
+      return res.status(400).json({ mensagem: validacaoFuncoes.message });
     }
     
-    // 3. Sugerir Alocações (Usando o Service)
-    const alocacoesSugeridas = sugerirAlocacoes(
-        membros, 
-        necessidades, 
-        new Date(dataInicio), 
-        new Date(dataFim), 
-        periodoRotacaoEmDias
-    );
+    // NOTA: 'setor' e 'ciclo' são opcionais no schema, então não são necessários aqui.
 
     // 4. Criar o novo Rodízio
     const novoRodizio = new Rodizio({
-      equipe: equipeId,
-      titulo,
-      descricao,
+      nome,
       dataInicio,
       dataFim,
-      periodoRotacaoEmDias,
-      membros,
-      necessidades,
-      alocacoes: alocacoesSugeridas,
-      status: 'Aberto'
+      duracaoTurno,
+      membros, // Array de strings (nomes)
+      funcoes, // Array de strings (cargos)
+      // Necessidades, setor e ciclo são opcionais ou omitidos
     });
 
     await novoRodizio.save();
 
-    res.status(201).json({ 
-        mensagem: "Rodízio criado com sucesso!", 
-        rodizio: novoRodizio 
-    });
-
+    res.status(201).json({ mensagem: "Rodízio criado com sucesso!", rodizio: novoRodizio });
   } catch (error) {
     console.error("Erro ao criar rodízio:", error);
-    res
-      .status(500)
-      .json({ mensagem: "Erro interno ao criar rodízio", erro: error.message });
+    res.status(500).json({ mensagem: "Erro interno ao criar rodízio", erro: error.message });
   }
 };
 
-
-// Funções existentes listadas no snippet (Manter a estrutura original)
-const getRodizio = async (req, res) => {
-  // Implementação para buscar um rodízio
-  // ... (Conteúdo original não fornecido, apenas mantendo a referência)
+const listarRodizios = async (req, res) => {
+  try {
+    // Se o RodizioController anterior usava listarRodiziosPorEquipe, você pode mudar o nome ou manter
+    // Para simplificar, vou usar o nome genérico 'listarRodizios'
+    const rodizios = await Rodizio.find();
+    res.json(rodizios);
+  } catch (error) {
+    res.status(500).json({ mensagem: "Erro ao listar rodízios", erro: error.message });
+  }
 };
 
-const listarRodiziosPorEquipe = async (req, res) => {
-  // Implementação para listar rodízios por equipe
-  // ... (Conteúdo original não fornecido, apenas mantendo a referência)
+const buscarRodizio = async (req, res) => {
+  try {
+    const rodizio = await Rodizio.findById(req.params.id);
+    if (!rodizio) {
+      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
+    }
+    res.json(rodizio);
+  } catch (error) {
+    res.status(500).json({ mensagem: "Erro ao buscar rodízio", erro: error.message });
+  }
 };
-
-const listarRodiziosPorUsuario = async (req, res) => {
-  // Implementação para listar rodízios por usuário
-  // ... (Conteúdo original não fornecido, apenas mantendo a referência)
-};
-
 
 const atualizarRodizio = async (req, res) => {
-  try {
-    const rodizio = await Rodizio.findById(req.params.id);
+  try {
+    const rodizio = await Rodizio.findById(req.params.id);
+    if (!rodizio) {
+      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
+    }
 
-    if (!rodizio) {
-      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
-    }
-
-    // Aplica as atualizações do body
-    const updates = req.body;
-    Object.keys(updates).forEach(key => {
-      rodizio[key] = updates[key];
-    });
-
-    // Revalida membros e necessidades se forem atualizados
-    if (rodizio.membros) {
-      const validacaoMembros = await validarMembros(rodizio.membros);
+    const updates = req.body;
+    
+    // Validação de membros e funções se estiverem presentes no update
+    if (updates.membros) {
+      const validacaoMembros = await validarMembros(updates.membros);
       if (!validacaoMembros.valid) {
         return res.status(400).json({ mensagem: validacaoMembros.message });
       }
     }
+    if (updates.funcoes) {
+      const validacaoFuncoes = validarFuncoes(updates.funcoes);
+      if (!validacaoFuncoes.valid) {
+        return res.status(400).json({ mensagem: validacaoFuncoes.message });
+      }
+    }
+    
+    // Ignorando validação de necessidades
+    
+    // Aplica as atualizações no objeto Rodizio
+    Object.keys(updates).forEach(key => {
+      // Ignora campos complexos que não são mais usados, como 'necessidades'
+      if (key !== 'necessidades') { 
+        rodizio[key] = updates[key];
+      }
+    });
 
-    if (rodizio.necessidades) {
-      const validacaoNecessidades = validarNecessidades(rodizio.necessidades);
-      if (!validacaoNecessidades.valid) {
-        return res.status(400).json({ mensagem: validacaoNecessidades.message });
-      }
-    }
+    await rodizio.save();
 
-    await rodizio.save();
-
-    res.json({ mensagem: \"Rodízio atualizado com sucesso!\", rodizio });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ mensagem: \"Erro ao atualizar rodízio\", erro: error.message });
-  }
+    res.json({ mensagem: "Rodízio atualizado com sucesso!", rodizio });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ mensagem: "Erro ao atualizar rodízio", erro: error.message });
+  }
 };
 
 const deletarRodizio = async (req, res) => {
-  try {
-    const rodizio = await Rodizio.findByIdAndDelete(req.params.id);
-    if (!rodizio) {
-      return res.status(404).json({ mensagem: \"Rodízio não encontrado\" });
-    }
-    res.json({ mensagem: \"Rodízio removido com sucesso\" });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ mensagem: \"Erro ao deletar rodízio\", erro: error.message });
-  }
+  try {
+    const rodizio = await Rodizio.findByIdAndDelete(req.params.id);
+    if (!rodizio) {
+      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
+    }
+    res.json({ mensagem: "Rodízio removido com sucesso" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ mensagem: "Erro ao deletar rodízio", erro: error.message });
+  }
 };
 
 module.exports = {
-  // Garante que 'criarRodizio' seja exportado
-  criarRodizio, 
-  getRodizio,
-  listarRodiziosPorEquipe,
-  listarRodiziosPorUsuario,
+  criarRodizio,
+  listarRodizios, // Usando função genérica
+  buscarRodizio,
   atualizarRodizio,
   deletarRodizio,
+  // As funções listarRodiziosPorEquipe, listarRodiziosPorUsuario, e getRodizio foram removidas
+  // pois não há implementação completa delas e a estrutura simplificada não as requer
 };
