@@ -1,7 +1,7 @@
 const Rodizio = require("../models/Rodizio");
 const Equipe = require("../models/Setor"); 
 const Usuario = require("../models/Usuario")
-const { sugerirAlocacoes } = require("../services/rodizioService")
+//const { sugerirAlocacoes } = require("../services/rodizioService")
 
 const validarMembros = async (membros) => {
   if (!membros || !Array.isArray(membros) || membros.length === 0) {
