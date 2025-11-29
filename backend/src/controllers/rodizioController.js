@@ -1,5 +1,5 @@
 const Rodizio = require("../models/Rodizio");
-const Equipe = require("../models/Setor"); 
+const Equipe = require("../models/Setor"); 
 const Usuario = require("../models/Usuario")
 //const { sugerirAlocacoes } = require("../services/rodizioService")
 
@@ -10,9 +10,9 @@ const validarMembros = async (membros) => {
   if (membros.some(m => !m.nome || typeof m.nome !== 'string' || m.nome.trim() === '')) {
     return { valid: false, message: 'Todos os membros devem ter um nome associado (texto não vazio).' };
   }
-  if (membros.some(m => m.funcao !== undefined && typeof m.funcao !== 'string')) {
-      return { valid: false, message: 'A função do membro deve ser um texto.' };
-  }
+  if (membros.some(m => m.funcao !== undefined && typeof m.funcao !== 'string')) {
+      return { valid: false, message: 'A função do membro deve ser um texto.' };
+  }
   return { valid: true };
 };
 
@@ -30,20 +30,19 @@ const validarNecessidades = (necessidades) => {
 };
 
 const criarRodizio = async (req, res) => {
-  try {
-    const { equipeId: equipeIdFromParams } = req.params;
-    
-    const { nome, descricao, ciclo, equipeId, membros, necessidades, dataInicio, dataFim } = req.body;
-    
-    const equipe = equipeId || equipeIdFromParams;
+  const equipeId = req.params.equipeId; 
+  console.log(`[BACKEND LOG] Tentando criar rodízio para equipeId: ${equipeId}`); 
 
-    if (!nome || !ciclo || !equipe || !dataInicio || !dataFim) {
-      return res.status(400).json({ mensagem: 'Campos obrigatórios faltando (nome, ciclo, equipe e datas).' });
+  try {
+    const { nome, descricao, ciclo, membros, necessidades, dataInicio, dataFim } = req.body;
+    
+    if (!nome || !ciclo || !equipeId || !dataInicio || !dataFim) {
+      return res.status(400).json({ mensagem: 'Campos obrigatórios faltando (nome, ciclo, ID da equipe e datas).' });
     }
 
-    const equipeExiste = await Equipe.findById(equipe);
+    const equipeExiste = await Equipe.findById(equipeId);
     if (!equipeExiste) {
-      return res.status(400).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
+      return res.status(404).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
     }
 
     const validacaoMembros = await validarMembros(membros);
@@ -60,7 +59,7 @@ const criarRodizio = async (req, res) => {
       nome,
       descricao,
       ciclo,
-      setor: equipe, 
+      setor: equipeId,
       membros,
       necessidades,
       dataInicio,
@@ -72,6 +71,14 @@ const criarRodizio = async (req, res) => {
     res.status(201).json({ mensagem: 'Rodízio criado com sucesso!', rodizio: novoRodizio });
 } catch (error) {
     console.error('Erro detalhado ao criar rodízio:', error);
+    
+    if (error.name === 'CastError' && error.kind === 'ObjectId') {
+        return res.status(400).json({ 
+            mensagem: `ID de Equipe inválido ou malformado: ${equipeId}. Verifique o formato do ObjectId.`, 
+            erro: error.message 
+        });
+    }
+
     res.status(500).json({ mensagem: 'Erro ao criar rodízio', erro: error.message });
 }
 };
@@ -82,12 +89,12 @@ const listarRodizios = async (req, res) => {
 
     let filter = {};
     if (equipeId) {
-      filter.setor = equipeId; 
+      filter.setor = equipeId; 
     }
 
     const rodizios = await Rodizio.find(filter)
       .populate("setor", "nome descricao")
-      .lean();
+      .lean();
 
     res.status(200).json(rodizios);
   } catch (error) {
@@ -102,7 +109,7 @@ const listarRodizioPorId = async (req, res) => {
   try {
     const rodizio = await Rodizio.findById(req.params.id)
       .populate("setor", "nome descricao")
-      .lean();
+      .lean();
 
     if (!rodizio) {
       return res.status(404).json({ mensagem: "Rodízio não encontrado" });
@@ -122,28 +129,28 @@ const atualizarRodizio = async (req, res) => {
       return res.status(404).json({ mensagem: "Rodízio não encontrado" });
     }
 
-    const { equipe: equipeIdUpdate, membros: membrosUpdate, necessidades: necessidadesUpdate, ...rest } = req.body;
+    const { equipe: equipeIdUpdate, membros: membrosUpdate, necessidades: necessidadesUpdate, ...rest } = req.body;
 
-    Object.assign(rodizio, rest);
+    Object.assign(rodizio, rest);
 
     if (equipeIdUpdate) {
       const equipeExiste = await Equipe.findById(equipeIdUpdate);
       if (!equipeExiste) {
-        return res.status(400).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
+        return res.status(404).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
       }
       rodizio.setor = equipeIdUpdate;
     }
 
-    if (membrosUpdate) {
-        rodizio.membros = membrosUpdate;
+    if (membrosUpdate) {
+        rodizio.membros = membrosUpdate;
       const validacaoMembros = await validarMembros(rodizio.membros);
       if (!validacaoMembros.valid) {
         return res.status(400).json({ mensagem: validacaoMembros.message });
       }
     }
 
-    if (necessidadesUpdate) {
-        rodizio.necessidades = necessidadesUpdate;
+    if (necessidadesUpdate) {
+        rodizio.necessidades = necessidadesUpdate;
       const validacaoNecessidades = validarNecessidades(rodizio.necessidades);
       if (!validacaoNecessidades.valid) {
         return res.status(400).json({ mensagem: validacaoNecessidades.message });
@@ -173,6 +180,7 @@ const deletarRodizio = async (req, res) => {
       .json({ mensagem: "Erro ao deletar rodízio", erro: error.message });
   }
 };
+
 /*
 const sugerirAlocacoesRodizio = async (req, res) => {
   try {
