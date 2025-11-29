@@ -1,5 +1,5 @@
 const Rodizio = require("../models/Rodizio");
-const Setor = require("../models/Setor");
+const Equipe = require("../models/Setor");
 const Usuario = require("../models/Usuario")
 const { sugerirAlocacoes } = require("../services/rodizioService")
 
@@ -32,15 +32,19 @@ const validarNecessidades = (necessidades) => {
 
 const criarRodizio = async (req, res) => {
   try {
-    const { nome, descricao, ciclo, setor, membros, necessidades, dataInicio, dataFim } = req.body;
+    const { equipeId: equipeIdFromParams } = req.params;
 
-    if (!nome || !ciclo || !setor || !dataInicio || !dataFim) {
-      return res.status(400).json({ mensagem: 'Campos obrigatórios faltando.' });
+    const { nome, descricao, ciclo, equipe: equipeIdFromBody, membros, necessidades, dataInicio, dataFim } = req.body;
+
+    const equipe = equipeIdFromParams || equipeIdFromBody;
+
+    if (!nome || !ciclo || !equipe || !dataInicio || !dataFim) {
+      return res.status(400).json({ mensagem: 'Campos obrigatórios faltando (nome, ciclo, equipe e datas).' });
     }
 
-    const setorExiste = await Setor.findById(setor);
-    if (!setorExiste) {
-      return res.status(400).json({ mensagem: 'O Setor especificado não foi encontrado.' });
+    const equipeExiste = await Equipe.findById(equipe);
+    if (!equipeExiste) {
+      return res.status(400).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
     }
 
     const validacaoMembros = await validarMembros(membros);
@@ -57,7 +61,7 @@ const criarRodizio = async (req, res) => {
       nome,
       descricao,
       ciclo,
-      setor,
+      setor: equipe,
       membros,
       necessidades,
       dataInicio,
@@ -68,20 +72,21 @@ const criarRodizio = async (req, res) => {
 
     res.status(201).json({ mensagem: 'Rodízio criado com sucesso!', rodizio: novoRodizio });
   } catch (error) {
+    console.error('Erro detalhado ao criar rodízio:', error);
     res.status(500).json({ mensagem: 'Erro ao criar rodízio', erro: error.message });
   }
 };
 
 const listarRodizios = async (req, res) => {
   try {
-    const { setorId } = req.query;
+    const { equipeId } = req.query;
 
     let filter = {};
-    if (setorId) {
-      filter.setor = setorId;
+    if (equipeId) {
+      filter.setor = equipeId;
     }
 
-    const rodizios = await Rodizio.find(filter) 
+    const rodizios = await Rodizio.find(filter)
       .populate("setor", "nome descricao")
       .populate("membros.usuario", "nome email");
 
@@ -120,11 +125,12 @@ const atualizarRodizio = async (req, res) => {
 
     Object.assign(rodizio, req.body);
 
-    if (req.body.setor) {
-      const setorExiste = await Setor.findById(req.body.setor);
-      if (!setorExiste) {
-        return res.status(400).json({ mensagem: 'O Setor especificado não foi encontrado.' });
+    if (req.body.equipe) {
+      const equipeExiste = await Equipe.findById(req.body.equipe);
+      if (!equipeExiste) {
+        return res.status(400).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
       }
+      rodizio.setor = req.body.equipe;
     }
 
     if (req.body.membros) {
