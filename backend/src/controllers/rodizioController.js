@@ -173,7 +173,7 @@ const deletarRodizio = async (req, res) => {
       .json({ mensagem: "Erro ao deletar rodízio", erro: error.message });
   }
 };
-
+/*
 const sugerirAlocacoesRodizio = async (req, res) => {
   try {
     const { id } = req.params;
@@ -186,7 +186,7 @@ const sugerirAlocacoesRodizio = async (req, res) => {
     }
     res.status(500).json({ mensagem: "Erro ao sugerir alocações", erro: error.message });
   }
-};
+};*/
 
 module.exports = {
   criarRodizio,
@@ -194,5 +194,5 @@ module.exports = {
   listarRodizioPorId,
   atualizarRodizio,
   deletarRodizio,
-  sugerirAlocacoesRodizio,
+  //sugerirAlocacoesRodizio,
 };
