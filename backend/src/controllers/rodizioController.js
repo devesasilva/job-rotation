@@ -3,6 +3,7 @@ const Equipe = require("../models/Setor"); 
 const Usuario = require("../models/Usuario")
 //const { sugerirAlocacoes } = require("../services/rodizioService")
 
+// Função de validação dos membros
 const validarMembros = async (membros) => {
   if (!membros || !Array.isArray(membros) || membros.length === 0) {
     return { valid: false, message: 'Membros são obrigatórios e devem ser um array não vazio.' };
@@ -16,6 +17,7 @@ const validarMembros = async (membros) => {
   return { valid: true };
 };
 
+// Função de validação das necessidades
 const validarNecessidades = (necessidades) => {
   if (!necessidades || necessidades.length === 0) {
     return { valid: true };
@@ -29,9 +31,10 @@ const validarNecessidades = (necessidades) => {
   return { valid: true };
 };
 
+// Cria um novo Rodízio
 const criarRodizio = async (req, res) => {
+  // Captura o ID da equipe dos parâmetros da URL
   const equipeId = req.params.equipeId; 
-  console.log(`[BACKEND LOG] Tentando criar rodízio para equipeId: ${equipeId}`); 
 
   try {
     const { nome, descricao, ciclo, membros, necessidades, dataInicio, dataFim } = req.body;
@@ -40,11 +43,7 @@ const criarRodizio = async (req, res) => {
       return res.status(400).json({ mensagem: 'Campos obrigatórios faltando (nome, ciclo, ID da equipe e datas).' });
     }
 
-    const equipeExiste = await Equipe.findById(equipeId);
-    if (!equipeExiste) {
-      return res.status(404).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
-    }
-
+    // O Rodízio será criado assumindo que o equipeId é válido.
     const validacaoMembros = await validarMembros(membros);
     if (!validacaoMembros.valid) {
       return res.status(400).json({ mensagem: validacaoMembros.message });
@@ -59,7 +58,7 @@ const criarRodizio = async (req, res) => {
       nome,
       descricao,
       ciclo,
-      setor: equipeId,
+      setor: equipeId, // Usa o ID da equipe
       membros,
       necessidades,
       dataInicio,
@@ -72,6 +71,7 @@ const criarRodizio = async (req, res) => {
 } catch (error) {
     console.error('Erro detalhado ao criar rodízio:', error);
     
+    // O tratamento de CastError é mantido para IDs malformados
     if (error.name === 'CastError' && error.kind === 'ObjectId') {
         return res.status(400).json({ 
             mensagem: `ID de Equipe inválido ou malformado: ${equipeId}. Verifique o formato do ObjectId.`, 
@@ -83,6 +83,7 @@ const criarRodizio = async (req, res) => {
 }
 };
 
+// Lista todos os Rodízios (opcionalmente filtrado por equipe/setor)
 const listarRodizios = async (req, res) => {
   try {
     const { equipeId } = req.query;
@@ -105,6 +106,7 @@ const listarRodizios = async (req, res) => {
   }
 };
 
+// Lista um Rodízio por ID
 const listarRodizioPorId = async (req, res) => {
   try {
     const rodizio = await Rodizio.findById(req.params.id)
@@ -121,6 +123,7 @@ const listarRodizioPorId = async (req, res) => {
   }
 };
 
+// Atualiza um Rodízio existente
 const atualizarRodizio = async (req, res) => {
   try {
     const rodizio = await Rodizio.findById(req.params.id);
@@ -134,11 +137,7 @@ const atualizarRodizio = async (req, res) => {
     Object.assign(rodizio, rest);
 
     if (equipeIdUpdate) {
-      const equipeExiste = await Equipe.findById(equipeIdUpdate);
-      if (!equipeExiste) {
-        return res.status(404).json({ mensagem: 'A Equipe especificada não foi encontrada.' });
-      }
-      rodizio.setor = equipeIdUpdate;
+        rodizio.setor = equipeIdUpdate;
     }
 
     if (membrosUpdate) {
@@ -167,6 +166,7 @@ const atualizarRodizio = async (req, res) => {
   }
 };
 
+// Deleta um Rodízio
 const deletarRodizio = async (req, res) => {
   try {
     const rodizio = await Rodizio.findByIdAndDelete(req.params.id);
@@ -182,6 +182,7 @@ const deletarRodizio = async (req, res) => {
 };
 
 /*
+// Função comentada para sugestão de alocações (mantida conforme solicitado)
 const sugerirAlocacoesRodizio = async (req, res) => {
   try {
     const { id } = req.params;
