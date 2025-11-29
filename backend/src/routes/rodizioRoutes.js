@@ -5,7 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 
 router.use(authMiddleware);
 
-router.post("/criar", rodizioController.criarRodizio);
+router.post("/criar/:equipeId", rodizioController.criarRodizio);
 router.get("/listar", rodizioController.listarRodizios);
 router.get("/listar/:id", rodizioController.listarRodizioPorId);
 router.put("/editar/:id", rodizioController.atualizarRodizio);
