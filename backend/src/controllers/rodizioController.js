@@ -3,42 +3,56 @@ const Setor = require("../models/Setor");
 const Usuario = require("../models/Usuario")
 const { sugerirAlocacoes } = require("../services/rodizioService")
 
+const validarMembros = async (membros) => {
+  if (!membros || !Array.isArray(membros) || membros.length === 0) {
+    return { valid: false, message: 'Membros são obrigatórios e devem ser um array não vazio.' };
+  }
+  if (membros.some(m => !m.usuario)) {
+    return { valid: false, message: 'Todos os membros devem ter um ID de usuário associado.' };
+  }
+  const usuarioIds = membros.map(m => m.usuario);
+  const usuariosEncontrados = await Usuario.find({ _id: { $in: usuarioIds } });
+  if (usuariosEncontrados.length !== usuarioIds.length) {
+    return { valid: false, message: 'Um ou mais usuários referenciados não foram encontrados.' };
+  }
+  return { valid: true };
+};
+
+const validarNecessidades = (necessidades) => {
+  if (!necessidades || !Array.isArray(necessidades) || necessidades.length === 0) {
+    return { valid: false, message: 'Necessidades são obrigatórias e devem ser um array não vazio.' };
+  }
+  for (const necessidade of necessidades) {
+    if (!necessidade.habilidade || !necessidade.formacao || !necessidade.quantidade || typeof necessidade.quantidade !== 'number' || necessidade.quantidade <= 0) {
+      return { valid: false, message: 'Cada necessidade deve ter habilidade, formação e uma quantidade numérica positiva.' };
+    }
+  }
+  return { valid: true };
+};
+
 const criarRodizio = async (req, res) => {
   try {
     const { nome, descricao, ciclo, setor, membros, necessidades, dataInicio, dataFim } = req.body;
 
-    
-     // 1. Verificar campos obrigatórios básicos
     if (!nome || !ciclo || !setor || !dataInicio || !dataFim) {
       return res.status(400).json({ mensagem: 'Campos obrigatórios faltando.' });
     }
 
-    // 2. Validar membros - se for obrigatório
-    if (!membros || !Array.isArray(membros) || membros.length === 0) {
-      return res.status(400).json({ mensagem: 'Membros são obrigatórios e devem ser um array não vazio.' });
+    const setorExiste = await Setor.findById(setor);
+    if (!setorExiste) {
+      return res.status(400).json({ mensagem: 'O Setor especificado não foi encontrado.' });
     }
 
-    // 3. Validar que todos os usuários existem
-    const usuarioIds = membros.map(m => m.usuario);
-    const usuariosEncontrados = await Usuario.find({ _id: { $in: usuarioIds } });
-
-    if (usuariosEncontrados.length !== usuarioIds.length) {
-      return res.status(400).json({ mensagem: 'Um ou mais usuários não foram encontrados.' });
+    const validacaoMembros = await validarMembros(membros);
+    if (!validacaoMembros.valid) {
+      return res.status(400).json({ mensagem: validacaoMembros.message });
     }
 
-    // 4. Validar necessidades - se for obrigatório
-    if (!necessidades || !Array.isArray(necessidades) || necessidades.length === 0) {
-      return res.status(400).json({ mensagem: 'Necessidades são obrigatórias e devem ser um array não vazio.' });
+    const validacaoNecessidades = validarNecessidades(necessidades);
+    if (!validacaoNecessidades.valid) {
+      return res.status(400).json({ mensagem: validacaoNecessidades.message });
     }
 
-    // 5. Validar campos de cada necessidade
-    for (const necessidade of necessidades) {
-      if (!necessidade.habilidade || !necessidade.formacao || !necessidade.quantidade) {
-        return res.status(400).json({ mensagem: 'Cada necessidade deve ter habilidade, formação e quantidade.' });
-      }
-    }
-
-    // Se chegou aqui, tá tudo certo pra criar
     const novoRodizio = new Rodizio({
       nome,
       descricao,
@@ -60,7 +74,14 @@ const criarRodizio = async (req, res) => {
 
 const listarRodizios = async (req, res) => {
   try {
-    const rodizios = await Rodizio.find()
+    const { setorId } = req.query;
+
+    let filter = {};
+    if (setorId) {
+      filter.setor = setorId;
+    }
+
+    const rodizios = await Rodizio.find(filter) 
       .populate("setor", "nome descricao")
       .populate("membros.usuario", "nome email");
 
@@ -79,6 +100,10 @@ const listarRodizioPorId = async (req, res) => {
       .populate("setor", "nome descricao")
       .populate("membros.usuario", "nome email");
 
+    if (!rodizio) {
+      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
+    }
+
     res.status(200).json(rodizio);
   } catch (error) {
     res.status(500).json({ mensagem: "Erro ao buscar rodízio", erro: error.message });
@@ -87,13 +112,38 @@ const listarRodizioPorId = async (req, res) => {
 
 const atualizarRodizio = async (req, res) => {
   try {
-    const rodizio = await Rodizio.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const rodizio = await Rodizio.findById(req.params.id);
+
     if (!rodizio) {
       return res.status(404).json({ mensagem: "Rodízio não encontrado" });
     }
-    res.json(rodizio);
+
+    Object.assign(rodizio, req.body);
+
+    if (req.body.setor) {
+      const setorExiste = await Setor.findById(req.body.setor);
+      if (!setorExiste) {
+        return res.status(400).json({ mensagem: 'O Setor especificado não foi encontrado.' });
+      }
+    }
+
+    if (req.body.membros) {
+      const validacaoMembros = await validarMembros(rodizio.membros);
+      if (!validacaoMembros.valid) {
+        return res.status(400).json({ mensagem: validacaoMembros.message });
+      }
+    }
+
+    if (req.body.necessidades) {
+      const validacaoNecessidades = validarNecessidades(rodizio.necessidades);
+      if (!validacaoNecessidades.valid) {
+        return res.status(400).json({ mensagem: validacaoNecessidades.message });
+      }
+    }
+
+    await rodizio.save();
+
+    res.json({ mensagem: "Rodízio atualizado com sucesso!", rodizio });
   } catch (error) {
     res
       .status(500)
@@ -122,6 +172,9 @@ const sugerirAlocacoesRodizio = async (req, res) => {
     res.status(200).json(sugestoes);
   } catch (error) {
     console.error("Erro ao sugerir alocações:", error);
+    if (error.message.includes("Rodízio não encontrado")) {
+      return res.status(404).json({ mensagem: error.message });
+    }
     res.status(500).json({ mensagem: "Erro ao sugerir alocações", erro: error.message });
   }
 };
