@@ -5,14 +5,12 @@ const authMiddleware = require('../middlewares/authMiddleware');
 
 router.use(authMiddleware);
 
-router.post("/criar/:equipeId", rodizioController.criarRodizio);
+router.post("/criar", rodizioController.criarRodizio); 
 router.get("/listar", rodizioController.listarRodizios);
-router.get("/listar/:id", rodizioController.listarRodizioPorId);
+router.get("/listar/:id", rodizioController.buscarRodizio); 
 router.put("/editar/:id", rodizioController.atualizarRodizio);
 router.delete("/deletar/:id", rodizioController.deletarRodizio);
-router.get('/:id/sugestoes', rodizioController.sugerirAlocacoesRodizio );
 
-module.exports = router;
 
 /**
  * @swagger
