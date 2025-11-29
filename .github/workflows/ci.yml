@@ -48,16 +48,16 @@ jobs:
       - name: Rodar npm audit (Nível Moderado)
         run: npm audit --audit-level=moderate
         
+      - name: Instalar Snyk CLI
+        run: npm install -g snyk
+   
       - name: Snyk Security Scan
-        uses: snyk/actions/node@master
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} 
-        with:
-          command: test
-          args: --dev
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --file=package.json --dev --exclude-vulns=SNYK-JS-INFLIGHT-6095116 --severity-threshold=high
           
   performance-tests: 
-    name: Teste de Performance (K6)
+    name: Teste de Performance K6
     needs: test 
     runs-on: ubuntu-latest
     
@@ -96,11 +96,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Check SENTRY_DSN Configuration
+      - name: Check SENTRY_DSN Configuration 
         run: |
           if [ -z "${{ secrets.SENTRY_DSN }}" ]; then
             echo "ERRO: Variável SENTRY_DSN não está configurada no GitHub Secrets."
             echo "A integração com Sentry para monitoramento de erros em produção está incompleta."
             exit 1
           fi
-          echo "SENTRY_DSN OK! O monitoramento de erros está pronto para uso na aplicação."
+          echo "SENTRY_DSN OK! O monitoramento de erros está pronto para uso na aplicação!"

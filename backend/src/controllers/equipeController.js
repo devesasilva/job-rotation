@@ -2,8 +2,8 @@ const Equipe = require("../models/Equipe");
 const Usuario = require("../models/Usuario");
 
 const criarEquipe = async (req, res) => {
- try {
-    const userId = req.user ? req.user.id : null; 
+  try {
+    const userId = req.user ? req.user.id : null;
 
     if (!userId) {
       return res.status(401).json({ mensagem: "Usuário não autenticado ou ID do usuário ausente no token." });
@@ -18,20 +18,21 @@ const criarEquipe = async (req, res) => {
     const membrosIniciais = [
       {
         usuario: userId,
-        perfil: 'admin', 
       }
     ];
 
-    const equipe = new Equipe({ nome, descricao, membros: membrosIniciais });
+    const criadorId = userId;
+
+    const equipe = new Equipe({ nome, descricao, criadorId, membros: membrosIniciais });
     await equipe.save();
 
     res.status(201).json(equipe);
   } catch (error) {
     if (error.name === 'ValidationError') {
       const mensagens = Object.values(error.errors).map(err => err.message).join(', ');
-      return res.status(400).json({ 
-        mensagem: "Erro de validação ao criar equipe: " + mensagens, 
-        erro: error.message 
+      return res.status(400).json({
+        mensagem: "Erro de validação ao criar equipe: " + mensagens,
+        erro: error.message
       });
     }
     console.error("Erro ao criar equipe:", error);
@@ -41,18 +42,18 @@ const criarEquipe = async (req, res) => {
 
 const listarEquipes = async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : null; 
-    
-        if (!userId) {
-             return res.status(401).json({ mensagem: "Usuário não autenticado para listar equipes." });
-        }
-        
+    const userId = req.user ? req.user.id : null;
+
+    if (!userId) {
+      return res.status(401).json({ mensagem: "Usuário não autenticado para listar equipes." });
+    }
+
     const equipes = await Equipe.find({
-      "membros.usuario": userId 
-    }).populate("membros.usuario", "nome email");
+      "membros.usuario": userId
+    }).populate("membros.usuario", "nome email _id"); // Mudei aqui
 
     if (equipes.length === 0) {
-      return res.status(200).json([]); 
+      return res.status(200).json([]);
     }
 
     res.status(200).json(equipes);
@@ -64,11 +65,16 @@ const listarEquipes = async (req, res) => {
 
 const atualizarEquipe = async (req, res) => {
   try {
-    const equipe = await Equipe.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    let equipe = await Equipe.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true 
+    });
 
     if (!equipe) {
       return res.status(404).json({ mensagem: "Equipe não encontrada" });
     }
+
+    equipe = await equipe.populate("membros.usuario", "nome email _id"); // Mudei aqui
 
     res.json(equipe);
   } catch (error) {
@@ -78,8 +84,9 @@ const atualizarEquipe = async (req, res) => {
 
 const listarEquipePorId = async (req, res) => {
   try {
+    // Adicionando _id à população para que o frontend possa identificar o criador
     const equipe = await Equipe.findById(req.params.id)
-      .populate("membros.usuario", "nome email");
+      .populate("membros.usuario", "nome email _id"); // Mudei aqui
 
     if (!equipe) {
       return res.status(404).json({ mensagem: "Equipe não encontrada." });
@@ -106,7 +113,7 @@ const deletarEquipe = async (req, res) => {
 };
 
 module.exports = {
-criarEquipe,
+  criarEquipe,
   listarEquipes,
   atualizarEquipe,
   deletarEquipe,
