@@ -3,8 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const register = async (req, res) => {
-    console.log('Corpo recebido:', req.body);
-    const { nome, email, senha, formacao, dataInicialCargoAtual } = req.body;
+    const { nome, email, senha } = req.body;
 
     try {
         const usuarioExistente = await Usuario.findOne({ email });
@@ -19,8 +18,6 @@ const register = async (req, res) => {
             nome,
             email,
             senha: senhaCriptografada,
-            formacao,
-            dataInicialCargoAtual,
         });
 
         await novoUsuario.save();

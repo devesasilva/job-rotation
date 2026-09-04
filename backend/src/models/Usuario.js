@@ -17,19 +17,7 @@ const usuarioSchema = new mongoose.Schema({
   senha: {
     type: String,
     required: true,
-  },
-  formacao: {
-    type: String,
-    required: false,
-  },
-  habilidades: [{
-    type: String,
-    required: false,
-  }],
-  dataInicialCargoAtual: {
-    type: Date,
-    required: false,
-  },
+  }
 }, { timestamps: true });
 
 const Usuario = mongoose.models.Usuario || mongoose.model('Usuario', usuarioSchema);
