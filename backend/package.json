@@ -4,7 +4,8 @@
   "description": "Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma da Fatec Cotia. O software a ser desenvolvido possui foco em  ser inovador, auxiliando empresas na implementação de programas de Job Rotation, automatizando os processos de rotação de funções e aplicando elementos de gamificação para engajar os participantes, promovendo a capacitação de colaboradores e fornecendo feedbacks transparentes.",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "engines": {
     "node": "^23.11.0"
@@ -33,5 +34,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
 }
