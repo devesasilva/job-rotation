@@ -64,10 +64,6 @@ const listarRodizios = async (req, res) => {
       .populate("setor", "nome descricao")
       .populate("membros.usuario", "nome email");
 
-    if (rodizios.length === 0) {
-      return res.status(404).json({ mensagem: "Nenhum rodízio encontrado." });
-    }
-
     res.status(200).json(rodizios);
   } catch (error) {
     console.error("Erro ao listar rodízios:", error);
@@ -82,10 +78,6 @@ const listarRodizioPorId = async (req, res) => {
     const rodizio = await Rodizio.findById(req.params.id)
       .populate("setor", "nome descricao")
       .populate("membros.usuario", "nome email");
-
-    if (!rodizio) {
-      return res.status(404).json({ mensagem: "Rodízio não encontrado." });
-    }
 
     res.status(200).json(rodizio);
   } catch (error) {

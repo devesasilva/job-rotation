@@ -12,14 +12,15 @@ const criar = async (req, res) => {
 const listar = async (req, res) => {
     try {
         const setores = await setorService.listarSetores();
+        res.status(200).json(setores);
     } catch (error) {
         res.status(500).json({ mensagem: error.message })
     }
 };
 
-const buscarPorId = async (req, res) => {
+const buscarSetorPorId = async (req, res) => {
     try{
-        const setor = await setorService.buscarPorId(req.params.id);
+        const setor = await setorService.buscarSetorPorId(req.params.id);
         if (!setor) return res.status(404).json({ mensagem: 'Setor não encontrado' });
         res.status(200).json(setor);
     } catch (error) {
@@ -30,8 +31,11 @@ const buscarPorId = async (req, res) => {
 const atualizar = async (req, res) => {
     try {
         const setor = await setorService.atualizarSetor(req.params.id, req.body);
-        if (!setor) return res.status(404).json({ mensagem: 'Setor não encontrado' });
-    } catch (error) {
+        if (!setor) { 
+            return res.status(404).json({mensagem: 'Setor não encontrado' });
+        }
+        return res.status(200).json(setor);
+        } catch (error) {
         res.status(400).json({ mensagem: error.message });
     }
 };
@@ -39,7 +43,9 @@ const atualizar = async (req, res) => {
 const deletar = async (req, res) => {
     try {
         const setor = await setorService.deletarSetor(req.params.id);
-        if(!setor) return res.status(404).json({ mensagem: 'Setor não encontrado' });
+        if(!setor) {
+            return res.status(404).json({ mensagem: 'Setor não encontrado' });
+        }
     } catch (error) {
         res.status(500).json({ mensagem: error.message});
     }
@@ -48,7 +54,7 @@ const deletar = async (req, res) => {
 module.exports = {
     criar,
     listar,
-    buscarPorId,
+    buscarSetorPorId,
     atualizar,
     deletar
 };

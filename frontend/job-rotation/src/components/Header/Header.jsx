@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';  // Importa o useNavigate
-import './Header.css';
-import '../../assets/style/login.css';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
