@@ -5,6 +5,7 @@ const authRoutes = require('./authRoutes');
 const equipeRoutes = require('./equipeRoutes');
 const rodizioRoutes = require('./rodizioRoutes');
 const setorRoutes = require('./setorRoutes');
+const organizacaoRoutes = require('./organizacaoRoutes');
 
 router.get('/api', (req, res) => {
   res.send('API está funcionando! 🚀');
@@ -14,6 +15,7 @@ router.use('/auth', authRoutes);
 router.use('/equipes', equipeRoutes);
 router.use('/rodizios', rodizioRoutes);
 router.use('/setores', setorRoutes);
+router.use('/organizacoes', organizacaoRoutes);
 
 module.exports = router;
 
