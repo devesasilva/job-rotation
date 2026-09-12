@@ -17,6 +17,7 @@ const membroOrganizacaoSchema = new mongoose.Schema(
     perfil: {
       type: String,
       enum: ['ADMIN', 'GESTOR', 'PARTICIPANTE'],
+      default: 'PARTICIPANTE',
       required: true,
     },
   },
