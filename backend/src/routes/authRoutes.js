@@ -33,10 +33,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
  *                 type: string
  *               senha:
  *                 type: string
- *               formacao:
- *                 type: string
- *               dataInicialCargoAtual:
- *                 type: string
  *     responses:
  *       201:
  *         description: Usuário cadastrado com sucesso
