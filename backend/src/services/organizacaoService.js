@@ -159,4 +159,5 @@ module.exports = {
   listarMembros,
   editarMembro,
   removerMembro,
+  validarAdmin,
 };
