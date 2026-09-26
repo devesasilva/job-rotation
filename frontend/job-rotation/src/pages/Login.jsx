@@ -1,13 +1,11 @@
-import React from 'react';
-import LoginCard from '../components/auth/LoginCard';
-import Background from '../components/Background';
+import React from "react";
+import LoginCard from "../components/auth/LoginCard";
 
 function Login() {
   return (
-    <div className="h-screen flex items-center justify-center bg-white relative overflow-hidden">
-      <Background />
-      <div className="w-full max-w-md px-4 z-10">
-        <LoginCard />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-5 py-10 text-[#111111]">
+      <div className="relative z-10 w-full max-w-[470px]">
+      <LoginCard />
       </div>
     </div>
   );

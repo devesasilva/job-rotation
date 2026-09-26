@@ -2,5 +2,8 @@
 @import 'tailwindcss';
 
 * {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "DM Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: bold;
+  font-style: normal;
 }
