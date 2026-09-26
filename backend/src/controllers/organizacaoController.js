@@ -191,6 +191,30 @@ const removerMembro = async (req, res) => {
   }
 };
 
+const listarOrganizacoesPorUsuario = async (req, res) => {
+  try {
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    const organizacoes =
+      await organizacaoService.listarOrganizacoesDoUsuario(usuarioId);
+
+    return res.status(200).json(organizacoes);
+  } catch (error) {
+    console.error("Erro ao listar organizações:", error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao listar organizações.",
+      erro: error.message,
+    });
+  }
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacao,
@@ -198,4 +222,5 @@ module.exports = {
   listarMembros,
   editarMembro,
   removerMembro,
+  listarOrganizacoesPorUsuario,
 };

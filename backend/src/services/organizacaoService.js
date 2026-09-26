@@ -152,6 +152,18 @@ const removerMembro = async (organizacaoId, usuarioId, membroId) => {
   return membro;
 };
 
+const listarOrganizacoesPorUsuario = async (usuarioId) => {
+  const membros = await MembroOrganizacao.find({
+    usuario: usuarioId,
+  })
+    .populate("organizacao")
+    .exec();
+
+  return membros
+    .filter((membro) => membro.organizacao)
+    .map((membro) => membro.organizacao);
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacaoPorId,
@@ -159,4 +171,5 @@ module.exports = {
   listarMembros,
   editarMembro,
   removerMembro,
+  listarOrganizacoesPorUsuario,
 };
