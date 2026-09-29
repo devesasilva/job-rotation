@@ -8,7 +8,9 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.use(authMiddleware);
 
 router.post('/criar', organizacaoController.criarOrganizacao);
+router.get('/me', organizacaoController.listarOrganizacoesPorUsuario);
 router.get('/:id', organizacaoController.buscarOrganizacao);
+router.delete('/:id', organizacaoController.excluirOrganizacao);
 
 router.post('/:id/membros', organizacaoController.adicionarMembro);
 router.get('/:id/membros', organizacaoController.listarMembros);

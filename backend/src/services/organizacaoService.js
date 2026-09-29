@@ -24,7 +24,7 @@ const criarOrganizacao = async (nome, usuarioId) => {
           {
             usuario: usuarioId,
             organizacao: organizacao._id,
-            perfil: 'ADMIN',
+            perfil: 'Administrador',
           },
         ],
         { session }
@@ -64,13 +64,31 @@ const validarAdmin = async (organizacaoId, usuarioId) => {
     organizacao: organizacaoId,
   });
 
-  if (!membro || membro.perfil !== 'ADMIN') {
+  if (!membro || membro.perfil !== 'Administrador') {
     const erro = new Error(
       'Usuário não possui permissão de administrador nesta organização.'
     );
     erro.status = 403;
     throw erro;
   }
+};
+
+const validarMembro = async (organizacaoId, usuarioId) => {
+  const membro = await MembroOrganizacao.findOne({
+    usuario: usuarioId,
+    organizacao: organizacaoId,
+  });
+
+  if (!membro) {
+    const erro = new Error(
+      'Usuário não possui acesso a esta organização.'
+    );
+
+    erro.status = 403;
+    throw erro;
+  }
+
+  return membro;
 };
 
 const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) => {
@@ -106,11 +124,11 @@ const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) =>
 };
 
 const listarMembros = async (organizacaoId, usuarioId) => {
-  await validarAdmin(organizacaoId, usuarioId);
+  await validarMembro(organizacaoId, usuarioId);
 
   return await MembroOrganizacao.find({ organizacao: organizacaoId })
-  .populate('usuario', 'nome email')
-  .exec();
+    .populate('usuario', 'nome email')
+    .exec();
 };
 
 const editarMembro = async (organizacaoId, usuarioId, membroId, novoPerfil) => {
@@ -164,6 +182,26 @@ const listarOrganizacoesPorUsuario = async (usuarioId) => {
     .map((membro) => membro.organizacao);
 };
 
+const excluirOrganizacao = async (organizacaoId, usuarioId) => {
+  await validarAdmin(organizacaoId, usuarioId);
+
+  const organizacao = await Organizacao.findById(organizacaoId);
+
+  if (!organizacao) {
+    const erro = new Error("Organização não encontrada.");
+    erro.status = 404;
+    throw erro;
+  }
+
+  await MembroOrganizacao.deleteMany({
+    organizacao: organizacaoId,
+  });
+
+  await organizacao.deleteOne();
+
+  return organizacao;
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacaoPorId,
@@ -172,4 +210,5 @@ module.exports = {
   editarMembro,
   removerMembro,
   listarOrganizacoesPorUsuario,
+  excluirOrganizacao
 };

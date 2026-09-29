@@ -202,7 +202,7 @@ const listarOrganizacoesPorUsuario = async (req, res) => {
     }
 
     const organizacoes =
-      await organizacaoService.listarOrganizacoesDoUsuario(usuarioId);
+      await organizacaoService.listarOrganizacoesPorUsuario(usuarioId);
 
     return res.status(200).json(organizacoes);
   } catch (error) {
@@ -215,6 +215,34 @@ const listarOrganizacoesPorUsuario = async (req, res) => {
   }
 };
 
+const excluirOrganizacao = async (req, res) => {
+  try {
+    const organizacaoId = req.params.id;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    await organizacaoService.excluirOrganizacao(
+      organizacaoId,
+      usuarioId
+    );
+
+    return res.status(200).json({
+      mensagem: "Organização excluída com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao excluir organização:", error);
+
+    return res.status(error.status || 500).json({
+      mensagem: error.message || "Erro ao excluir organização.",
+    });
+  }
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacao,
@@ -223,4 +251,5 @@ module.exports = {
   editarMembro,
   removerMembro,
   listarOrganizacoesPorUsuario,
+  excluirOrganizacao
 };
