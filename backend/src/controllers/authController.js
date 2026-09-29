@@ -56,7 +56,36 @@ const login = async (req, res) => {
     }
 };
 
+const me = async (req, res) => {
+    try {
+        const usuarioId = req.user?.id;
+
+        if (!usuarioId) {
+            return res.status(401).json({
+                mensagem: 'Usuário não autenticado.'
+            });
+        }
+
+        const usuario = await Usuario.findById(usuarioId).select('-senha');
+
+        if (!usuario) {
+            return res.status(404).json({
+                mensagem: 'Usuário não encontrado.'
+            });
+        }
+
+        return res.status(200).json(usuario);
+
+    } catch (error) {
+        return res.status(500).json({
+            mensagem: 'Erro ao buscar usuário.',
+            erro: error.message
+        });
+    }
+};
+
 module.exports = {
     register,
-    login
+    login,
+    me
 };
