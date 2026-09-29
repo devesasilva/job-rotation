@@ -19,9 +19,6 @@ export default function Main() {
 
   const [usuario, setUsuario] = useState(null);
 
-  /*
-   * Busca as organizações do usuário
-   */
   useEffect(() => {
     carregarDados();
   }, []);
@@ -42,9 +39,6 @@ export default function Main() {
           : {},
       };
 
-      /*
-       * Organizações às quais o usuário pertence
-       */
       const organizacoesResponse = await axios.get(
         `${API}/organizacoes/me`,
         config
@@ -52,11 +46,6 @@ export default function Main() {
 
       setOrganizacoes(organizacoesResponse.data || []);
 
-      /*
-       * Dados do usuário
-       *
-       * Esse endpoint precisa existir no backend.
-       */
       const usuarioResponse = await axios.get(
         `${API}/auth/me`,
         config
@@ -117,7 +106,7 @@ export default function Main() {
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        `${API}/organizacoes`,
+        `${API}/organizacoes/criar`,
         {
           nome: nomeOrganizacao.trim(),
         },
@@ -133,18 +122,11 @@ export default function Main() {
 
       const novaOrganizacao = response.data.organizacao;
 
-      /*
-       * Depois de criar, entra diretamente
-       * na organização criada.
-       */
       if (novaOrganizacao?._id) {
         navigate(`/organizacao/${novaOrganizacao._id}`);
         return;
       }
 
-      /*
-       * Fallback caso a API não retorne o objeto esperado.
-       */
       await carregarDados();
 
       setModalAberto(false);
@@ -161,33 +143,18 @@ export default function Main() {
     }
   };
 
-  /*
-   * Visualizar organização
-   */
   const handleVisualizar = (organizacaoId) => {
     setMenuAberto(null);
     navigate(`/organizacao/${organizacaoId}`);
   };
 
-  /*
-   * Editar organização
-   *
-   * Ainda depende de uma rota de edição no backend.
-   */
   const handleEditar = (organizacaoId) => {
     setMenuAberto(null);
 
     console.log("Editar organização:", organizacaoId);
 
-    // Futuramente:
-    // navigate(`/organizacao/${organizacaoId}/editar`);
   };
 
-  /*
-   * Excluir organização
-   *
-   * Ainda depende de uma rota de exclusão no backend.
-   */
   const handleExcluir = async (organizacaoId) => {
     setMenuAberto(null);
 
@@ -199,16 +166,12 @@ export default function Main() {
 
     console.log("Excluir organização:", organizacaoId);
 
-    // Futuramente:
-    // await axios.delete(`${API}/organizacoes/${organizacaoId}`);
   };
 
   return (
     <div className="min-h-screen bg-white text-[#111111]">
-      {/* HEADER */}
       <header className="sticky top-0 z-30 border-b-2 border-[#111111] bg-white/95 backdrop-blur-[10px]">
         <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between gap-5">
-          {/* LOGO */}
           <button
             onClick={() => navigate("/main")}
             className="flex items-center gap-[10px] border-0 bg-transparent p-0 font-['Space_Grotesk',Arial,sans-serif] text-[18px] font-bold tracking-[-0.04em] text-[#111111]"
@@ -218,7 +181,6 @@ export default function Main() {
             <span>Job Rotation</span>
           </button>
 
-          {/* USUÁRIO */}
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-xs font-bold text-[#111111]">
@@ -241,9 +203,7 @@ export default function Main() {
         </div>
       </header>
 
-      {/* CONTEÚDO */}
       <main className="mx-auto w-[min(1160px,calc(100%-40px))] py-14 sm:py-20">
-        {/* TÍTULO */}
         <section className="mb-12">
           <div className="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
@@ -262,7 +222,6 @@ export default function Main() {
           </p>
         </section>
 
-        {/* ERRO */}
         {errorMsg && (
           <div
             role="alert"
@@ -272,7 +231,6 @@ export default function Main() {
           </div>
         )}
 
-        {/* LOADING */}
         {loading ? (
           <div className="flex min-h-[220px] items-center justify-center rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4]">
             <p className="font-semibold text-[#686864]">
@@ -281,7 +239,6 @@ export default function Main() {
           </div>
         ) : (
           <>
-            {/* SEM ORGANIZAÇÕES */}
             {organizacoes.length === 0 && (
               <section className="rounded-[24px] border-2 border-[#111111] bg-[#f8f7f4] p-8 shadow-[8px_9px_0_#111111] sm:p-12">
                 <div className="max-w-[620px]">
@@ -312,7 +269,6 @@ export default function Main() {
               </section>
             )}
 
-            {/* ORGANIZAÇÕES */}
             {organizacoes.length > 0 && (
               <section>
                 <div className="mb-5 flex items-center justify-between gap-4">
@@ -338,7 +294,6 @@ export default function Main() {
                       key={organizacao._id}
                       className="relative rounded-[18px] border-2 border-[#111111] bg-white p-6 transition-transform duration-200 hover:-translate-y-1 hover:shadow-[6px_7px_0_#111111]"
                     >
-                      {/* COR DECORATIVA */}
                       <div
                         className={`mb-6 grid h-12 w-12 place-items-center rounded-xl border-2 border-[#111111] text-xl font-bold ${
                           index % 3 === 0
@@ -351,7 +306,6 @@ export default function Main() {
                         {organizacao.nome?.charAt(0).toUpperCase()}
                       </div>
 
-                      {/* NOME + MENU */}
                       <div className="flex items-start justify-between gap-4">
                         <button
                           type="button"
@@ -370,7 +324,6 @@ export default function Main() {
                           </p>
                         </button>
 
-                        {/* MENU ⋮ */}
                         <div className="relative">
                           <button
                             type="button"
@@ -431,7 +384,6 @@ export default function Main() {
         )}
       </main>
 
-      {/* MODAL CRIAR ORGANIZAÇÃO */}
       {modalAberto && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
