@@ -4,7 +4,6 @@ import LoginForm from "./LoginForm";
 export default function LoginCard() {
   return (
     <div className="relative w-full max-w-[470px] overflow-hidden rounded-[24px] border-2 border-[#111111] bg-white shadow-[10px_12px_0_#111111]">
-      {/* Detalhe decorativo */}
       <div className="absolute right-6 top-6 flex gap-1.5">
         <span className="h-2 w-2 rounded-full bg-[#ff6b5f]" />
         <span className="h-2 w-2 rounded-full bg-[#ffd84d]" />

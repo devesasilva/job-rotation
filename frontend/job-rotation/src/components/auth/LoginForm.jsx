@@ -69,7 +69,7 @@ export default function LoginForm() {
         localStorage.setItem("token", res.data.token);
       }
 
-      navigate("/index");
+      navigate("/main");
     } catch (err) {
       console.error("Erro no login (axios):", err);
 
