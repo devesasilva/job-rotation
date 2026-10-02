@@ -1,16 +1,31 @@
-const express = require("express");
-const router = express.Router();
-const rodizioController = require("../controllers/rodizioController");
-const authMiddleware = require('../middlewares/authMiddleware');
+const express = require('express');
 
-router.use(authMiddleware);
+const router = express.Router({
+  mergeParams: true,
+});
 
-router.post("/criar", rodizioController.criarRodizio);
-router.get("/listar", rodizioController.listarRodizios);
-router.get("/listar/:id", rodizioController.listarRodizioPorId);
-router.put("/editar/:id", rodizioController.atualizarRodizio);
-router.delete("/deletar/:id", rodizioController.deletarRodizio);
-router.get('/:id/sugestoes', rodizioController.sugerirAlocacoesRodizio );
+const rodizioController =
+  require('../controllers/rodizioController');
+
+router.post(
+  '/',
+  rodizioController.agendarRodizio
+);
+
+router.get(
+  '/',
+  rodizioController.listarRodizios
+);
+
+router.get(
+  '/minha',
+  rodizioController.listarMinhaRotacaoAtual
+);
+
+router.get(
+  '/:rodizioId',
+  rodizioController.buscarRodizioPorId
+);
 
 module.exports = router;
 
@@ -23,12 +38,21 @@ module.exports = router;
 
 /**
  * @swagger
- * /rodizio/criar:
+ * /organizacoes/{id}/rodizios:
  *   post:
- *     summary: Cria um novo rodízio
+ *     summary: Agenda uma nova rotação
+ *     description: Agenda uma rotação para um participante dentro de uma organização.
  *     tags: [Rodízio]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID da organização
+ *         schema:
+ *           type: string
+ *           example: 68c123456789abcdef123456
  *     requestBody:
  *       required: true
  *       content:
@@ -36,27 +60,43 @@ module.exports = router;
  *           schema:
  *             type: object
  *             required:
- *               - nome
+ *               - participante
+ *               - funcao
  *               - dataInicio
  *               - dataFim
  *             properties:
- *               nome:
+ *               participante:
  *                 type: string
- *                 example: Rodízio de Equipe A
- *               descricao:
+ *                 description: ID do membro da organização que participará da rotação
+ *                 example: 68c223456789abcdef123456
+ *               funcao:
  *                 type: string
- *                 example: Rodízio mensal para equipe A
+ *                 description: ID da função que será exercida durante a rotação
+ *                 example: 68c323456789abcdef123456
+ *               ciclo:
+ *                 type: string
+ *                 description: Ciclo da rotação
+ *                 enum:
+ *                   - Diário
+ *                   - Semanal
+ *                   - Quinzenal
+ *                   - Mensal
+ *                   - Anual
+ *                 default: Mensal
+ *                 example: Mensal
  *               dataInicio:
  *                 type: string
- *                 format: date
- *                 example: 2025-11-01
+ *                 format: date-time
+ *                 description: Data e hora de início da rotação
+ *                 example: "2026-10-05T00:00:00.000Z"
  *               dataFim:
  *                 type: string
- *                 format: date
- *                 example: 2025-12-01
+ *                 format: date-time
+ *                 description: Data e hora de término da rotação
+ *                 example: "2026-11-05T00:00:00.000Z"
  *     responses:
  *       201:
- *         description: Rodízio criado com sucesso
+ *         description: Rotação agendada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -64,21 +104,57 @@ module.exports = router;
  *               properties:
  *                 mensagem:
  *                   type: string
- *                   example: Rodízio criado com sucesso
+ *                   example: Rotação agendada com sucesso!
+ *                 rodizio:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 68c423456789abcdef123456
+ *                     organizacao:
+ *                       type: string
+ *                       example: 68c123456789abcdef123456
+ *                     participante:
+ *                       type: object
+ *                     funcao:
+ *                       type: object
+ *                     ciclo:
+ *                       type: string
+ *                       example: Mensal
+ *                     dataInicio:
+ *                       type: string
+ *                       format: date-time
+ *                     dataFim:
+ *                       type: string
+ *                       format: date-time
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos, participante ou função não pertencente à organização, período inválido ou ciclo inválido
+ *       401:
+ *         description: Usuário não autenticado
+ *       403:
+ *         description: Usuário não possui permissão para agendar rotações
+ *       409:
+ *         description: Participante já possui uma rotação neste período
  *       500:
- *         description: Erro no servidor
+ *         description: Erro interno do servidor
  *
- * /rodizio/listar:
  *   get:
- *     summary: Lista todos os rodízios
+ *     summary: Lista as rotações da organização
+ *     description: Retorna todas as rotações cadastradas na organização.
  *     tags: [Rodízio]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID da organização
+ *         schema:
+ *           type: string
+ *           example: 68c123456789abcdef123456
  *     responses:
  *       200:
- *         description: Lista de rodízios
+ *         description: Lista de rotações
  *         content:
  *           application/json:
  *             schema:
@@ -88,20 +164,60 @@ module.exports = router;
  *                 properties:
  *                   _id:
  *                     type: string
- *                   nome:
+ *                     example: 68c423456789abcdef123456
+ *                   organizacao:
  *                     type: string
- *                   descricao:
+ *                     example: 68c123456789abcdef123456
+ *                   participante:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       perfil:
+ *                         type: string
+ *                         example: PARTICIPANTE
+ *                       usuario:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           nome:
+ *                             type: string
+ *                             example: Maria Silva
+ *                           email:
+ *                             type: string
+ *                             example: maria@email.com
+ *                   funcao:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       nome:
+ *                         type: string
+ *                         example: Desenvolvedora Backend
+ *                       descricao:
+ *                         type: string
+ *                         example: Responsável pelo desenvolvimento das APIs
+ *                   ciclo:
  *                     type: string
+ *                     example: Mensal
  *                   dataInicio:
  *                     type: string
+ *                     format: date-time
  *                   dataFim:
  *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Usuário não autenticado
+ *       403:
+ *         description: Usuário não possui permissão para listar as rotações
  *       500:
- *         description: Erro no servidor
+ *         description: Erro interno do servidor
  *
- * /rodizio/listar/{id}:
+ * /organizacoes/{id}/rodizios/minha:
  *   get:
- *     summary: Busca um rodízio pelo ID
+ *     summary: Consulta minha rotação atual
+ *     description: Retorna as rotações atuais do usuário autenticado na organização.
  *     tags: [Rodízio]
  *     security:
  *       - bearerAuth: []
@@ -109,121 +225,13 @@ module.exports = router;
  *       - in: path
  *         name: id
  *         required: true
+ *         description: ID da organização
  *         schema:
  *           type: string
- *         description: ID do rodízio
+ *           example: 68c123456789abcdef123456
  *     responses:
  *       200:
- *         description: Rodízio encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                 nome:
- *                   type: string
- *                 descricao:
- *                   type: string
- *                 dataInicio:
- *                   type: string
- *                 dataFim:
- *                   type: string
- *       404:
- *         description: Rodízio não encontrado
- *       500:
- *         description: Erro no servidor
- *
- * /rodizio/editar/{id}:
- *   put:
- *     summary: Atualiza um rodízio pelo ID
- *     tags: [Rodízio]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID do rodízio
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nome:
- *                 type: string
- *               descricao:
- *                 type: string
- *               dataInicio:
- *                 type: string
- *               dataFim:
- *                 type: string
- *     responses:
- *       200:
- *         description: Rodízio atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 mensagem:
- *                   type: string
- *                   example: Rodízio atualizado com sucesso
- *       404:
- *         description: Rodízio não encontrado
- *       500:
- *         description: Erro no servidor
- *
- * /rodizio/deletar/{id}:
- *   delete:
- *     summary: Deleta um rodízio pelo ID
- *     tags: [Rodízio]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID do rodízio
- *     responses:
- *       200:
- *         description: Rodízio removido com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 mensagem:
- *                   type: string
- *                   example: Rodízio removido com sucesso
- *       404:
- *         description: Rodízio não encontrado
- *       500:
- *         description: Erro no servidor
- *
- * /rodizio/{id}/sugestoes:
- *   get:
- *     summary: Sugere alocações para um rodízio pelo ID
- *     tags: [Rodízio]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID do rodízio
- *     responses:
- *       200:
- *         description: Sugestões de alocação retornadas com sucesso
+ *         description: Rotações atuais do usuário
  *         content:
  *           application/json:
  *             schema:
@@ -231,12 +239,123 @@ module.exports = router;
  *               items:
  *                 type: object
  *                 properties:
- *                   usuario:
+ *                   _id:
  *                     type: string
+ *                     example: 68c423456789abcdef123456
+ *                   organizacao:
+ *                     type: string
+ *                     example: 68c123456789abcdef123456
+ *                   participante:
+ *                     type: string
+ *                     example: 68c223456789abcdef123456
  *                   funcao:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       nome:
+ *                         type: string
+ *                         example: Desenvolvedora Backend
+ *                       descricao:
+ *                         type: string
+ *                         example: Responsável pelo desenvolvimento das APIs
+ *                   ciclo:
  *                     type: string
- *       404:
- *         description: Rodízio não encontrado
+ *                     example: Mensal
+ *                   dataInicio:
+ *                     type: string
+ *                     format: date-time
+ *                   dataFim:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Usuário não autenticado
+ *       403:
+ *         description: Usuário não pertence à organização
  *       500:
- *         description: Erro no servidor
+ *         description: Erro interno do servidor
+ *
+ * /organizacoes/{id}/rodizios/{rodizioId}:
+ *   get:
+ *     summary: Busca uma rotação pelo ID
+ *     description: Retorna os detalhes de uma rotação específica da organização.
+ *     tags: [Rodízio]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID da organização
+ *         schema:
+ *           type: string
+ *           example: 68c123456789abcdef123456
+ *       - in: path
+ *         name: rodizioId
+ *         required: true
+ *         description: ID da rotação
+ *         schema:
+ *           type: string
+ *           example: 68c423456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: Rotação encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 68c423456789abcdef123456
+ *                 organizacao:
+ *                   type: string
+ *                   example: 68c123456789abcdef123456
+ *                 participante:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     perfil:
+ *                       type: string
+ *                       example: PARTICIPANTE
+ *                     usuario:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         nome:
+ *                           type: string
+ *                           example: Maria Silva
+ *                         email:
+ *                           type: string
+ *                           example: maria@email.com
+ *                 funcao:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     nome:
+ *                       type: string
+ *                       example: Desenvolvedora Backend
+ *                     descricao:
+ *                       type: string
+ *                       example: Responsável pelo desenvolvimento das APIs
+ *                 ciclo:
+ *                   type: string
+ *                   example: Mensal
+ *                 dataInicio:
+ *                   type: string
+ *                   format: date-time
+ *                 dataFim:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Usuário não autenticado
+ *       403:
+ *         description: Usuário não pertence à organização
+ *       404:
+ *         description: Rotação não encontrada nesta organização
+ *       500:
+ *         description: Erro interno do servidor
  */

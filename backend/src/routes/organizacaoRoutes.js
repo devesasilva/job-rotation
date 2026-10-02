@@ -1,6 +1,7 @@
 const express = require('express');
 
 const router = express.Router();
+const rodizioRoutes = require('./rodizioRoutes');
 
 const organizacaoController = require('../controllers/organizacaoController');
 const funcaoController = require('../controllers/funcaoController');
@@ -246,5 +247,5 @@ router.delete('/:id/membros/:membroId', organizacaoController.removerMembro);
  */
 router.post('/:id/funcoes', funcaoController.criar);
 router.get('/:id/funcoes', funcaoController.listar);
-
+router.use('/:id/rodizios', rodizioRoutes);
 module.exports = router;

@@ -73,6 +73,44 @@ const validarAdmin = async (organizacaoId, usuarioId) => {
   }
 };
 
+const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
+  const membro = await MembroOrganizacao.findOne({
+    usuario: usuarioId,
+    organizacao: organizacaoId,
+  });
+
+  if (!membro || !['ADMIN', 'GESTOR'].includes(membro.perfil)) {
+    const erro = new Error(
+      'Usuário não possui permissão de administrador ou gestor nesta organização.'
+    );
+
+    erro.status = 403;
+
+    throw erro;
+  }
+
+  return membro;
+};
+
+const validarMembro = async (organizacaoId, usuarioId) => {
+  const membro = await MembroOrganizacao.findOne({
+    usuario: usuarioId,
+    organizacao: organizacaoId,
+  });
+
+  if (!membro) {
+    const erro = new Error(
+      'Usuário não possui acesso a esta organização.'
+    );
+
+    erro.status = 403;
+
+    throw erro;
+  }
+
+  return membro;
+};
+
 const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) => {
   await validarAdmin(organizacaoId, usuarioId);
 
@@ -106,11 +144,13 @@ const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) =>
 };
 
 const listarMembros = async (organizacaoId, usuarioId) => {
-  await validarAdmin(organizacaoId, usuarioId);
+  await validarAdminOuGestor(organizacaoId, usuarioId);
 
-  return await MembroOrganizacao.find({ organizacao: organizacaoId })
-  .populate('usuario', 'nome email')
-  .exec();
+  return await MembroOrganizacao.find({
+    organizacao: organizacaoId,
+  })
+    .populate('usuario', 'nome email')
+    .exec();
 };
 
 const editarMembro = async (organizacaoId, usuarioId, membroId, novoPerfil) => {
@@ -160,4 +200,6 @@ module.exports = {
   editarMembro,
   removerMembro,
   validarAdmin,
+  validarAdminOuGestor,
+  validarMembro,
 };
