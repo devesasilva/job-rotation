@@ -54,9 +54,16 @@ export default function Organizacao() {
 
   const [modalAdicionarFuncaoAberto, setModalAdicionarFuncaoAberto] =
     useState(false);
+  const [modalEditarFuncaoAberto, setModalEditarFuncaoAberto] =
+    useState(false);
+  const [funcaoSelecionada, setFuncaoSelecionada] = useState(null);
   const [nomeFuncao, setNomeFuncao] = useState("");
   const [descricaoFuncao, setDescricaoFuncao] = useState("");
   const [adicionandoFuncao, setAdicionandoFuncao] = useState(false);
+  const [editandoFuncao, setEditandoFuncao] = useState(false);
+
+  const [funcaoParaExcluir, setFuncaoParaExcluir] = useState(null);
+  const [excluindoFuncao, setExcluindoFuncao] = useState(false);
 
   const [modalAgendarRodizioAberto, setModalAgendarRodizioAberto] =
     useState(false);
@@ -577,6 +584,110 @@ export default function Organizacao() {
       );
     } finally {
       setAdicionandoFuncao(false);
+    }
+  };
+
+  const abrirModalEditarFuncao = (funcao) => {
+    setFuncaoSelecionada(funcao);
+    setNomeFuncao(funcao.nome || "");
+    setDescricaoFuncao(funcao.descricao || "");
+    setErrorFuncoes("");
+    setModalEditarFuncaoAberto(true);
+  };
+
+  const fecharModalEditarFuncao = () => {
+    if (editandoFuncao) {
+      return;
+    }
+
+    setModalEditarFuncaoAberto(false);
+    setFuncaoSelecionada(null);
+    setNomeFuncao("");
+    setDescricaoFuncao("");
+  };
+
+  const handleEditarFuncao = async (e) => {
+    e.preventDefault();
+
+    if (!nomeFuncao.trim()) {
+      setErrorFuncoes("O nome da função é obrigatório.");
+      return;
+    }
+
+    if (!funcaoSelecionada?._id) {
+      setErrorFuncoes("Função não encontrada.");
+      return;
+    }
+
+    setEditandoFuncao(true);
+    setErrorFuncoes("");
+
+    try {
+      await axios.put(
+        `${API}/organizacoes/${id}/funcoes/${funcaoSelecionada._id}`,
+        {
+          nome: nomeFuncao.trim(),
+          descricao: descricaoFuncao.trim() || undefined,
+        },
+        getConfig()
+      );
+
+      fecharModalEditarFuncao();
+      await carregarFuncoes();
+    } catch (error) {
+      console.error("Erro ao editar função:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível editar a função."
+      );
+    } finally {
+      setEditandoFuncao(false);
+    }
+  };
+
+  const handleExcluirFuncao = (funcao) => {
+    setFuncaoParaExcluir(funcao);
+    setErrorFuncoes("");
+  };
+
+  const confirmarExclusaoFuncao = async () => {
+    if (!funcaoParaExcluir?._id) {
+      return;
+    }
+
+    setExcluindoFuncao(true);
+    setErrorFuncoes("");
+
+    try {
+      await axios.delete(
+        `${API}/organizacoes/${id}/funcoes/${funcaoParaExcluir._id}`,
+        getConfig()
+      );
+
+      setFuncaoParaExcluir(null);
+      await carregarFuncoes();
+    } catch (error) {
+      console.error("Erro ao excluir função:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível excluir a função."
+      );
+    } finally {
+      setExcluindoFuncao(false);
     }
   };
 
@@ -1158,15 +1269,16 @@ export default function Organizacao() {
                       </div>
                     ) : (
                       <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
-                        <div className="hidden grid-cols-[1fr_2fr] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] sm:grid">
+                        <div className="hidden grid-cols-[1fr_2fr_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] sm:grid">
                           <span>Função</span>
                           <span>Descrição</span>
+                          <span>Ações</span>
                         </div>
 
                         {funcoes.map((funcao) => (
                           <div
                             key={funcao._id}
-                            className="grid gap-4 border-b border-[#deded9] px-5 py-5 last:border-b-0 sm:grid-cols-[1fr_2fr] sm:items-center"
+                            className="grid gap-4 border-b border-[#deded9] px-5 py-5 last:border-b-0 sm:grid-cols-[1fr_2fr_180px] sm:items-center"
                           >
                             <div>
                               <p className="font-bold">
@@ -1179,6 +1291,28 @@ export default function Organizacao() {
                                 {funcao.descricao ||
                                   "Nenhuma descrição informada."}
                               </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  abrirModalEditarFuncao(funcao)
+                                }
+                                className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline"
+                              >
+                                Editar
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleExcluirFuncao(funcao)
+                                }
+                                className="cursor-pointer text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline"
+                              >
+                                Excluir
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -1778,6 +1912,175 @@ export default function Organizacao() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {modalEditarFuncaoAberto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              fecharModalEditarFuncao();
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ffd84d]" />
+                Editar função
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Edite a
+                <br />
+                função.
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Atualize o nome e a descrição desta função.
+              </p>
+            </div>
+
+            <form onSubmit={handleEditarFuncao}>
+              <label
+                htmlFor="nome-funcao-editada"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Nome
+              </label>
+
+              <input
+                id="nome-funcao-editada"
+                type="text"
+                value={nomeFuncao}
+                onChange={(e) => {
+                  setNomeFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                autoFocus
+                className="w-full border-0 border-b-2 border-[#deded9] bg-transparent px-0 py-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-[#aaaaaa] focus:border-[#111111]"
+              />
+
+              <label
+                htmlFor="descricao-funcao-editada"
+                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Descrição
+              </label>
+
+              <textarea
+                id="descricao-funcao-editada"
+                value={descricaoFuncao}
+                onChange={(e) => {
+                  setDescricaoFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                rows={4}
+                className="w-full resize-none rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              />
+
+              {errorFuncoes && (
+                <div className="mt-4 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                  {errorFuncoes}
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={fecharModalEditarFuncao}
+                  disabled={editandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={editandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editandoFuncao
+                    ? "Salvando..."
+                    : "Salvar alterações →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {funcaoParaExcluir && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !excluindoFuncao
+            ) {
+              setFuncaoParaExcluir(null);
+              setErrorFuncoes("");
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
+                Excluir função
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Excluir esta
+                <br />
+                função?
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Deseja realmente excluir {" "}
+                <strong className="font-bold text-[#111111]">
+                  {funcaoParaExcluir.nome || "esta função"}
+                </strong>
+                ?
+              </p>
+
+              <p className="mt-3 text-sm leading-relaxed text-[#b9362d]">
+                Essa ação removerá a função da organização.
+              </p>
+            </div>
+
+            {errorFuncoes && (
+              <div className="mb-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                {errorFuncoes}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={excluindoFuncao}
+                onClick={() => {
+                  setFuncaoParaExcluir(null);
+                  setErrorFuncoes("");
+                }}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarExclusaoFuncao}
+                disabled={excluindoFuncao}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#ff6b5f] px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                {excluindoFuncao
+                  ? "Excluindo..."
+                  : "Excluir função"}
+              </button>
+            </div>
           </div>
         </div>
       )}
