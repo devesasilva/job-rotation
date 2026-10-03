@@ -73,6 +73,28 @@ const validarAdmin = async (organizacaoId, usuarioId) => {
   }
 };
 
+const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
+  const membro = await MembroOrganizacao.findOne({
+    usuario: usuarioId,
+    organizacao: organizacaoId,
+  });
+
+  if (
+    !membro ||
+    (membro.perfil !== 'Administrador' &&
+      membro.perfil !== 'Gestor')
+  ) {
+    const erro = new Error(
+      'Usuário não possui permissão para acessar esta função.'
+    );
+
+    erro.status = 403;
+    throw erro;
+  }
+
+  return membro;
+};
+
 const validarMembro = async (organizacaoId, usuarioId) => {
   const membro = await MembroOrganizacao.findOne({
     usuario: usuarioId,
@@ -227,5 +249,7 @@ module.exports = {
   removerMembro,
   listarOrganizacoesPorUsuario,
   excluirOrganizacao,
-  editarOrganizacao
+  editarOrganizacao,
+  validarAdmin,
+  validarAdminOuGestor
 };
