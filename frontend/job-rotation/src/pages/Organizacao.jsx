@@ -10,6 +10,7 @@ export default function Organizacao() {
 
   const [organizacao, setOrganizacao] = useState(null);
   const [membros, setMembros] = useState([]);
+  const [usuario, setUsuario] = useState(null);
 
   const [abaAtiva, setAbaAtiva] = useState("membros");
 
@@ -19,21 +20,28 @@ export default function Organizacao() {
   const [errorMsg, setErrorMsg] = useState("");
   const [errorMembros, setErrorMembros] = useState("");
 
+  // Logout
+  const [saindo, setSaindo] = useState(false);
+
   // Modal de adicionar membro
-  const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
+  const [modalAdicionarAberto, setModalAdicionarAberto] =
+    useState(false);
   const [emailMembro, setEmailMembro] = useState("");
-  const [perfilMembro, setPerfilMembro] = useState("MEMBRO");
+  const [perfilMembro, setPerfilMembro] = useState("Membro");
   const [adicionandoMembro, setAdicionandoMembro] = useState(false);
 
   // Modal de editar membro
-  const [modalEditarAberto, setModalEditarAberto] = useState(false);
-  const [membroSelecionado, setMembroSelecionado] = useState(null);
+  const [modalEditarAberto, setModalEditarAberto] =
+    useState(false);
+  const [membroSelecionado, setMembroSelecionado] =
+    useState(null);
   const [perfilEditado, setPerfilEditado] = useState("");
   const [editandoMembro, setEditandoMembro] = useState(false);
 
   useEffect(() => {
     carregarOrganizacao();
     carregarMembros();
+    carregarUsuario();
   }, [id]);
 
   const getConfig = () => {
@@ -49,6 +57,101 @@ export default function Organizacao() {
     };
   };
 
+  // ============================================================
+  // USUÁRIO
+  // ============================================================
+
+  const carregarUsuario = async () => {
+    try {
+      const response = await axios.get(
+        `${API}/auth/me`,
+        getConfig()
+      );
+
+      setUsuario(response.data);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar usuário:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+  };
+
+  /*
+   * Iniciais do usuário
+   */
+  const obterIniciais = (nome = "") => {
+    const partes = nome
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (partes.length === 0) {
+      return "?";
+    }
+
+    if (partes.length === 1) {
+      return partes[0]
+        .substring(0, 2)
+        .toUpperCase();
+    }
+
+    return (
+      partes[0][0] +
+      partes[partes.length - 1][0]
+    ).toUpperCase();
+  };
+
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  const handleLogout = async () => {
+    if (saindo) {
+      return;
+    }
+
+    setSaindo(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        await axios.post(
+          `${API}/auth/logout`,
+          {},
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao realizar logout:",
+        error
+      );
+    } finally {
+      localStorage.removeItem("token");
+
+      setUsuario(null);
+      setSaindo(false);
+
+      navigate("/login");
+    }
+  };
+
+  // ============================================================
+  // ORGANIZAÇÃO
+  // ============================================================
+
   const carregarOrganizacao = async () => {
     setLoading(true);
     setErrorMsg("");
@@ -61,9 +164,13 @@ export default function Organizacao() {
 
       setOrganizacao(response.data);
     } catch (error) {
-      console.error("Erro ao carregar organização:", error);
+      console.error(
+        "Erro ao carregar organização:",
+        error
+      );
 
       if (error.response?.status === 401) {
+        localStorage.removeItem("token");
         navigate("/login");
         return;
       }
@@ -77,6 +184,10 @@ export default function Organizacao() {
     }
   };
 
+  // ============================================================
+  // MEMBROS
+  // ============================================================
+
   const carregarMembros = async () => {
     setLoadingMembros(true);
     setErrorMembros("");
@@ -89,9 +200,13 @@ export default function Organizacao() {
 
       setMembros(response.data || []);
     } catch (error) {
-      console.error("Erro ao carregar membros:", error);
+      console.error(
+        "Erro ao carregar membros:",
+        error
+      );
 
       if (error.response?.status === 401) {
+        localStorage.removeItem("token");
         navigate("/login");
         return;
       }
@@ -105,6 +220,10 @@ export default function Organizacao() {
     }
   };
 
+  // ============================================================
+  // ADICIONAR MEMBRO
+  // ============================================================
+
   const abrirModalAdicionar = () => {
     setEmailMembro("");
     setPerfilMembro("Membro");
@@ -113,7 +232,9 @@ export default function Organizacao() {
   };
 
   const fecharModalAdicionar = () => {
-    if (adicionandoMembro) return;
+    if (adicionandoMembro) {
+      return;
+    }
 
     setModalAdicionarAberto(false);
     setEmailMembro("");
@@ -124,7 +245,9 @@ export default function Organizacao() {
     e.preventDefault();
 
     if (!emailMembro.trim()) {
-      setErrorMembros("Digite o email do membro.");
+      setErrorMembros(
+        "Digite o email do membro."
+      );
       return;
     }
 
@@ -144,9 +267,13 @@ export default function Organizacao() {
       fecharModalAdicionar();
       await carregarMembros();
     } catch (error) {
-      console.error("Erro ao adicionar membro:", error);
+      console.error(
+        "Erro ao adicionar membro:",
+        error
+      );
 
       if (error.response?.status === 401) {
+        localStorage.removeItem("token");
         navigate("/login");
         return;
       }
@@ -166,13 +293,17 @@ export default function Organizacao() {
 
   const abrirModalEditar = (membro) => {
     setMembroSelecionado(membro);
-    setPerfilEditado(membro.perfil || "Membro");
+    setPerfilEditado(
+      membro.perfil || "Membro"
+    );
     setErrorMembros("");
     setModalEditarAberto(true);
   };
 
   const fecharModalEditar = () => {
-    if (editandoMembro) return;
+    if (editandoMembro) {
+      return;
+    }
 
     setModalEditarAberto(false);
     setMembroSelecionado(null);
@@ -183,12 +314,16 @@ export default function Organizacao() {
     e.preventDefault();
 
     if (!perfilEditado) {
-      setErrorMembros("Selecione um perfil.");
+      setErrorMembros(
+        "Selecione um perfil."
+      );
       return;
     }
 
     if (!membroSelecionado?._id) {
-      setErrorMembros("Membro não encontrado.");
+      setErrorMembros(
+        "Membro não encontrado."
+      );
       return;
     }
 
@@ -207,9 +342,13 @@ export default function Organizacao() {
       fecharModalEditar();
       await carregarMembros();
     } catch (error) {
-      console.error("Erro ao editar membro:", error);
+      console.error(
+        "Erro ao editar membro:",
+        error
+      );
 
       if (error.response?.status === 401) {
+        localStorage.removeItem("token");
         navigate("/login");
         return;
       }
@@ -239,7 +378,9 @@ export default function Organizacao() {
       `Tem certeza que deseja remover ${nomeMembro} da organização?`
     );
 
-    if (!confirmar) return;
+    if (!confirmar) {
+      return;
+    }
 
     setErrorMembros("");
 
@@ -251,9 +392,13 @@ export default function Organizacao() {
 
       await carregarMembros();
     } catch (error) {
-      console.error("Erro ao remover membro:", error);
+      console.error(
+        "Erro ao remover membro:",
+        error
+      );
 
       if (error.response?.status === 401) {
+        localStorage.removeItem("token");
         navigate("/login");
         return;
       }
@@ -266,13 +411,85 @@ export default function Organizacao() {
   };
 
   // ============================================================
-  // LOADING DA ORGANIZAÇÃO
+  // LOADING
   // ============================================================
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-[#111111]">
-        <main className="mx-auto flex min-h-screen w-[min(1160px,calc(100%-40px))] items-center justify-center">
+        {/* NAVBAR */}
+        <header className="sticky top-0 z-30 border-b-2 border-[#111111] bg-white/95 backdrop-blur-[10px]">
+          <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between gap-5">
+
+            {/* Logo */}
+            <button
+              type="button"
+              onClick={() => navigate("/main")}
+              className="flex cursor-pointer items-center gap-[10px] border-0 bg-transparent p-0 font-['Space_Grotesk',Arial,sans-serif] text-[18px] font-bold tracking-[-0.04em] text-[#111111]"
+            >
+              <span className="relative grid h-[30px] w-[30px] place-items-center overflow-hidden rounded-lg border-2 border-[#111111] before:absolute before:left-[5px] before:top-[5px] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[#ff6b5f] after:absolute after:bottom-[5px] after:right-[5px] after:h-[7px] after:w-[7px] after:rounded-full after:bg-[#b7dc58]" />
+
+              <span>
+                Job Rotation
+              </span>
+            </button>
+
+            {/* Usuário */}
+            <div className="flex items-center gap-3">
+              <div className="hidden text-right sm:block">
+                <p className="text-xs font-bold text-[#111111]">
+                  {usuario?.nome || "Usuário"}
+                </p>
+
+                <p className="text-[11px] text-[#686864]">
+                  Minha conta
+                </p>
+              </div>
+
+              <div
+                className="grid h-[42px] w-[42px] place-items-center rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold"
+                title={
+                  usuario?.nome || "Usuário"
+                }
+              >
+                {obterIniciais(
+                  usuario?.nome
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={saindo}
+                title="Sair"
+                className="flex h-[42px] cursor-pointer items-center gap-2 rounded-[9px] bg-white px-3 font-bold text-[#b9362d] transition-all duration-200 hover:-translate-y-1 hover:bg-[#fff1ef] hover:shadow-[3px_3px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <path d="M16 17l5-5-5-5" />
+                  <path d="M21 12H9" />
+                </svg>
+
+                <span className="hidden sm:inline">
+                  {saindo
+                    ? "Saindo..."
+                    : "Sair"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto flex min-h-[calc(100vh-74px)] w-[min(1160px,calc(100%-40px))] items-center justify-center">
           <p className="font-semibold text-[#686864]">
             Carregando organização...
           </p>
@@ -283,22 +500,113 @@ export default function Organizacao() {
 
   return (
     <div className="min-h-screen bg-white text-[#111111]">
+
+      {/* ============================================================
+          NAVBAR
+      ============================================================ */}
       <header className="sticky top-0 z-30 border-b-2 border-[#111111] bg-white/95 backdrop-blur-[10px]">
-        <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between">
+        <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between gap-5">
+
+          {/* Logo */}
           <button
+            type="button"
             onClick={() => navigate("/main")}
-            className="font-['Space_Grotesk',Arial,sans-serif] text-lg font-bold"
+            className="flex cursor-pointer items-center gap-[10px] border-0 bg-transparent p-0 font-['Space_Grotesk',Arial,sans-serif] text-[18px] font-bold tracking-[-0.04em] text-[#111111]"
           >
-            ← Voltar
+            <span className="relative grid h-[30px] w-[30px] place-items-center overflow-hidden rounded-lg border-2 border-[#111111] before:absolute before:left-[5px] before:top-[5px] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[#ff6b5f] after:absolute after:bottom-[5px] after:right-[5px] after:h-[7px] after:w-[7px] after:rounded-full after:bg-[#b7dc58]" />
+
+            <span>
+              Job Rotation
+            </span>
           </button>
 
-          <span className="font-['Space_Grotesk',Arial,sans-serif] text-lg font-bold">
-            Job Rotation
-          </span>
+          {/* Usuário + Logout */}
+          <div className="flex items-center gap-3">
+
+            <div className="hidden text-right sm:block">
+              <p className="text-xs font-bold text-[#111111]">
+                {usuario?.nome || "Usuário"}
+              </p>
+
+              <p className="text-[11px] text-[#686864]">
+                Minha conta
+              </p>
+            </div>
+
+            {/* Avatar */}
+            <div
+              className="grid h-[42px] w-[42px] place-items-center rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold"
+              title={
+                usuario?.nome || "Usuário"
+              }
+            >
+              {obterIniciais(
+                usuario?.nome
+              )}
+            </div>
+
+            {/* Logout */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={saindo}
+              title="Sair"
+              className="flex h-[42px] cursor-pointer items-center gap-2 rounded-[9px] bg-white px-3 font-bold text-[#b9362d] transition-all duration-200 hover:-translate-y-1 hover:bg-[#fff1ef] hover:shadow-[3px_3px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
+
+              <span className="hidden sm:inline">
+                {saindo
+                  ? "Saindo..."
+                  : "Sair"}
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-[min(1160px,calc(100%-40px))] py-14 sm:py-20">
+      {/* ============================================================
+          CONTEÚDO
+      ============================================================ */}
+      <main className="mx-auto w-[min(1160px,calc(100%-40px))] py-10 sm:py-14">
+
+        {/* VOLTAR */}
+        <button
+          type="button"
+          onClick={() => navigate("/main")}
+          className="mb-8 inline-flex cursor-pointer items-center gap-2 rounded-[9px] border-2 border-[#111111] bg-white px-3 py-2 text-sm font-bold transition-all duration-200 hover:-translate-y-1 hover:shadow-[3px_3px_0_#111111]"
+          aria-label="Voltar para minhas organizações"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5"
+          >
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+
+          <span>Voltar</span>
+        </button>
+
         {errorMsg ? (
           <div className="rounded-[18px] border-2 border-[#ff6b5f] bg-[#fff1ef] p-6">
             <p className="font-semibold text-[#b9362d]">
@@ -327,10 +635,11 @@ export default function Organizacao() {
             <section>
               <div className="border-b-2 border-[#111111]">
                 <div className="flex gap-1 overflow-x-auto">
+
                   <button
                     type="button"
                     onClick={() => setAbaAtiva("membros")}
-                    className={`min-w-[110px] px-5 py-4 text-sm font-bold transition-colors ${
+                    className={`min-w-[110px] cursor-pointer px-5 py-4 text-sm font-bold transition-colors ${
                       abaAtiva === "membros"
                         ? "border-b-4 border-[#ff6b5f] text-[#111111]"
                         : "text-[#686864] hover:text-[#111111]"
@@ -342,7 +651,7 @@ export default function Organizacao() {
                   <button
                     type="button"
                     onClick={() => setAbaAtiva("funcoes")}
-                    className={`min-w-[110px] px-5 py-4 text-sm font-bold transition-colors ${
+                    className={`min-w-[110px] cursor-pointer px-5 py-4 text-sm font-bold transition-colors ${
                       abaAtiva === "funcoes"
                         ? "border-b-4 border-[#b7dc58] text-[#111111]"
                         : "text-[#686864] hover:text-[#111111]"
@@ -354,7 +663,7 @@ export default function Organizacao() {
                   <button
                     type="button"
                     onClick={() => setAbaAtiva("rodizios")}
-                    className={`min-w-[110px] px-5 py-4 text-sm font-bold transition-colors ${
+                    className={`min-w-[110px] cursor-pointer px-5 py-4 text-sm font-bold transition-colors ${
                       abaAtiva === "rodizios"
                         ? "border-b-4 border-[#8eb9ff] text-[#111111]"
                         : "text-[#686864] hover:text-[#111111]"
@@ -362,16 +671,19 @@ export default function Organizacao() {
                   >
                     Rodízios
                   </button>
+
                 </div>
               </div>
 
-              {/* CONTEÚDO DAS ABAS */}
+              {/* CONTEÚDO */}
               <div className="pt-8">
+
                 {/* =====================================================
                     MEMBROS
                 ====================================================== */}
                 {abaAtiva === "membros" && (
                   <section>
+
                     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
@@ -386,7 +698,7 @@ export default function Organizacao() {
                       <button
                         type="button"
                         onClick={abrirModalAdicionar}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
                       >
                         + Adicionar membro
                       </button>
@@ -406,6 +718,7 @@ export default function Organizacao() {
                       </div>
                     ) : membros.length === 0 ? (
                       <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
+
                         <div className="grid h-12 w-12 place-items-center rounded-xl border-2 border-[#111111] bg-[#b7dc58] text-xl font-bold">
                           +
                         </div>
@@ -421,14 +734,16 @@ export default function Organizacao() {
                         <button
                           type="button"
                           onClick={abrirModalAdicionar}
-                          className="mt-6 min-h-11 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                          className="mt-6 min-h-11 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
                         >
                           + Adicionar membro
                         </button>
+
                       </div>
                     ) : (
                       <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
-                        {/* CABEÇALHO DA LISTA */}
+
+                        {/* CABEÇALHO */}
                         <div className="hidden grid-cols-[1fr_180px_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] sm:grid">
                           <span>Membro</span>
                           <span>Perfil</span>
@@ -441,6 +756,7 @@ export default function Organizacao() {
                             key={membro._id}
                             className="grid gap-4 border-b border-[#deded9] px-5 py-5 last:border-b-0 sm:grid-cols-[1fr_180px_180px] sm:items-center"
                           >
+
                             <div>
                               <p className="font-bold">
                                 {membro.usuario?.nome ||
@@ -457,15 +773,21 @@ export default function Organizacao() {
 
                             <div>
                               <span className="inline-flex rounded-full border border-[#111111] bg-[#f8f7f4] px-3 py-1 text-xs font-bold">
-                                {membro.perfil || "Membro"}
+                                {membro.perfil ||
+                                  "Membro"}
                               </span>
                             </div>
 
                             <div className="flex gap-4">
+
                               <button
                                 type="button"
-                                onClick={() => abrirModalEditar(membro)}
-                                className="text-sm font-bold underline underline-offset-4 hover:no-underline"
+                                onClick={() =>
+                                  abrirModalEditar(
+                                    membro
+                                  )
+                                }
+                                className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline"
                               >
                                 Editar
                               </button>
@@ -473,12 +795,15 @@ export default function Organizacao() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  handleRemoverMembro(membro)
+                                  handleRemoverMembro(
+                                    membro
+                                  )
                                 }
-                                className="text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline"
+                                className="cursor-pointer text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline"
                               >
                                 Remover
                               </button>
+
                             </div>
                           </div>
                         ))}
@@ -492,6 +817,7 @@ export default function Organizacao() {
                 ====================================================== */}
                 {abaAtiva === "funcoes" && (
                   <section>
+
                     <div className="mb-6">
                       <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
                         Funções
@@ -511,6 +837,7 @@ export default function Organizacao() {
                         O gerenciamento de funções será exibido aqui.
                       </p>
                     </div>
+
                   </section>
                 )}
 
@@ -519,6 +846,7 @@ export default function Organizacao() {
                 ====================================================== */}
                 {abaAtiva === "rodizios" && (
                   <section>
+
                     <div className="mb-6">
                       <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
                         Rodízios
@@ -538,8 +866,10 @@ export default function Organizacao() {
                         O gerenciamento de rodízios será exibido aqui.
                       </p>
                     </div>
+
                   </section>
                 )}
+
               </div>
             </section>
           </>
@@ -559,6 +889,7 @@ export default function Organizacao() {
           }}
         >
           <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+
             <div className="mb-7">
               <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
@@ -572,12 +903,12 @@ export default function Organizacao() {
               </h2>
 
               <p className="mt-4 text-sm leading-relaxed text-[#686864]">
-                Informe o email do usuário que deseja adicionar à
-                organização.
+                Informe o email do usuário que deseja adicionar à organização.
               </p>
             </div>
 
             <form onSubmit={handleAdicionarMembro}>
+
               <label
                 htmlFor="email-membro"
                 className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
@@ -608,12 +939,22 @@ export default function Organizacao() {
               <select
                 id="perfil-membro"
                 value={perfilMembro}
-                onChange={(e) => setPerfilMembro(e.target.value)}
-                className="w-full rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+                onChange={(e) =>
+                  setPerfilMembro(e.target.value)
+                }
+                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
               >
-                <option value="Membro">Membro</option>
-                <option value="Moderador">Moderador</option>
-                <option value="Administrador">Administrador</option>
+                <option value="Membro">
+                  Membro
+                </option>
+
+                <option value="Moderador">
+                  Moderador
+                </option>
+
+                <option value="Administrador">
+                  Administrador
+                </option>
               </select>
 
               {errorMembros && (
@@ -623,11 +964,12 @@ export default function Organizacao() {
               )}
 
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
                 <button
                   type="button"
                   onClick={fecharModalAdicionar}
                   disabled={adicionandoMembro}
-                  className="min-h-12 rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:opacity-60"
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancelar
                 </button>
@@ -635,12 +977,13 @@ export default function Organizacao() {
                 <button
                   type="submit"
                   disabled={adicionandoMembro}
-                  className="min-h-12 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {adicionandoMembro
                     ? "Adicionando..."
                     : "Adicionar membro →"}
                 </button>
+
               </div>
             </form>
           </div>
@@ -660,6 +1003,7 @@ export default function Organizacao() {
           }}
         >
           <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+
             <div className="mb-7">
               <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ffd84d]" />
@@ -678,6 +1022,7 @@ export default function Organizacao() {
             </div>
 
             <form onSubmit={handleEditarMembro}>
+
               <label
                 htmlFor="perfil-editado"
                 className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
@@ -689,15 +1034,24 @@ export default function Organizacao() {
                 id="perfil-editado"
                 value={perfilEditado}
                 onChange={(e) => {
-                  setPerfilEditado(e.target.value);
+                  setPerfilEditado(
+                    e.target.value
+                  );
                   setErrorMembros("");
                 }}
-                className="w-full rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
               >
-                <option value="Membro">Membro</option>
-                <option value="Moderador">Moderador</option>
-                <option value="Administrador">Administrador</option>
+                <option value="Membro">
+                  Membro
+                </option>
 
+                <option value="Moderador">
+                  Moderador
+                </option>
+
+                <option value="Administrador">
+                  Administrador
+                </option>
               </select>
 
               {errorMembros && (
@@ -707,11 +1061,12 @@ export default function Organizacao() {
               )}
 
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
                 <button
                   type="button"
                   onClick={fecharModalEditar}
                   disabled={editandoMembro}
-                  className="min-h-12 rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:opacity-60"
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancelar
                 </button>
@@ -719,12 +1074,13 @@ export default function Organizacao() {
                 <button
                   type="submit"
                   disabled={editandoMembro}
-                  className="min-h-12 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {editandoMembro
                     ? "Salvando..."
                     : "Salvar alterações →"}
                 </button>
+
               </div>
             </form>
           </div>
