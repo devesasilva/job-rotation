@@ -243,6 +243,43 @@ const excluirOrganizacao = async (req, res) => {
   }
 };
 
+const editarOrganizacao = async (req, res) => {
+  try {
+    const organizacaoId = req.params.id;
+    const { nome } = req.body;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        mensagem: "O nome da organização é obrigatório.",
+      });
+    }
+
+    const organizacaoAtualizada = await organizacaoService.editarOrganizacao(
+      organizacaoId,
+      usuarioId,
+      nome.trim()
+    );
+
+    return res.status(200).json({
+      mensagem: "Organização atualizada com sucesso!",
+      organizacao: organizacaoAtualizada,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar organização:", error);
+  
+    return res.status(error.status || 500).json({
+      mensagem: error.message || "Erro ao atualizar organização.",
+    });
+  }
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacao,
@@ -251,5 +288,6 @@ module.exports = {
   editarMembro,
   removerMembro,
   listarOrganizacoesPorUsuario,
-  excluirOrganizacao
+  excluirOrganizacao,
+  editarOrganizacao
 };

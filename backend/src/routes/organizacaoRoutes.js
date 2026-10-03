@@ -10,6 +10,7 @@ router.use(authMiddleware);
 router.post('/criar', organizacaoController.criarOrganizacao);
 router.get('/me', organizacaoController.listarOrganizacoesPorUsuario);
 router.get('/:id', organizacaoController.buscarOrganizacao);
+router.put('/:id', organizacaoController.editarOrganizacao);
 router.delete('/:id', organizacaoController.excluirOrganizacao);
 
 router.post('/:id/membros', organizacaoController.adicionarMembro);

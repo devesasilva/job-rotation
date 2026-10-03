@@ -202,6 +202,22 @@ const excluirOrganizacao = async (organizacaoId, usuarioId) => {
   return organizacao;
 };
 
+const editarOrganizacao = async (organizacaoId, usuarioId, novoNome) => {
+  await validarAdmin(organizacaoId, usuarioId);
+
+  const organizacao = await Organizacao.findById(organizacaoId);
+
+  if (!organizacao) { 
+    const erro = new Error("Organização não encontrada.");
+    erro.status = 404;
+    throw erro;
+  }
+
+  organizacao.nome = novoNome.trim();
+  await organizacao.save();
+  return organizacao;
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacaoPorId,
@@ -210,5 +226,6 @@ module.exports = {
   editarMembro,
   removerMembro,
   listarOrganizacoesPorUsuario,
-  excluirOrganizacao
+  excluirOrganizacao,
+  editarOrganizacao
 };
