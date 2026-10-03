@@ -39,83 +39,11 @@ router.use(authMiddleware);
  *         description: Erro no servidor
  */
 router.post('/criar', organizacaoController.criarOrganizacao);
-
-/**
- * @swagger
- * /organizacoes/{id}:
- *   get:
- *     summary: Busca uma organização pelo ID
- *     tags: [Organizações]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID da organização
- *     responses:
- *       200:
- *         description: Organização encontrada
- *       401:
- *         description: Usuário não autenticado
- *       404:
- *         description: Organização não encontrada
- *       500:
- *         description: Erro no servidor
- */
+router.get('/me', organizacaoController.listarOrganizacoesPorUsuario);
 router.get('/:id', organizacaoController.buscarOrganizacao);
+router.put('/:id', organizacaoController.editarOrganizacao);
+router.delete('/:id', organizacaoController.excluirOrganizacao);
 
-/**
- * @swagger
- * /organizacoes/{id}/membros:
- *   post:
- *     summary: Adiciona um membro à organização
- *     tags: [Organizações]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID da organização
- *     responses:
- *       201:
- *         description: Membro adicionado com sucesso
- *       400:
- *         description: Dados inválidos
- *       401:
- *         description: Usuário não autenticado
- *       403:
- *         description: Usuário sem permissão
- *       500:
- *         description: Erro no servidor
- *
- *   get:
- *     summary: Lista os membros da organização
- *     tags: [Organizações]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID da organização
- *     responses:
- *       200:
- *         description: Lista de membros
- *       401:
- *         description: Usuário não autenticado
- *       403:
- *         description: Usuário sem permissão
- *       500:
- *         description: Erro no servidor
- */
 router.post('/:id/membros', organizacaoController.adicionarMembro);
 router.get('/:id/membros', organizacaoController.listarMembros);
 

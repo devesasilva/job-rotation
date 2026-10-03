@@ -191,6 +191,95 @@ const removerMembro = async (req, res) => {
   }
 };
 
+const listarOrganizacoesPorUsuario = async (req, res) => {
+  try {
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    const organizacoes =
+      await organizacaoService.listarOrganizacoesPorUsuario(usuarioId);
+
+    return res.status(200).json(organizacoes);
+  } catch (error) {
+    console.error("Erro ao listar organizações:", error);
+
+    return res.status(500).json({
+      mensagem: "Erro ao listar organizações.",
+      erro: error.message,
+    });
+  }
+};
+
+const excluirOrganizacao = async (req, res) => {
+  try {
+    const organizacaoId = req.params.id;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    await organizacaoService.excluirOrganizacao(
+      organizacaoId,
+      usuarioId
+    );
+
+    return res.status(200).json({
+      mensagem: "Organização excluída com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao excluir organização:", error);
+
+    return res.status(error.status || 500).json({
+      mensagem: error.message || "Erro ao excluir organização.",
+    });
+  }
+};
+
+const editarOrganizacao = async (req, res) => {
+  try {
+    const organizacaoId = req.params.id;
+    const { nome } = req.body;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: "Usuário não autenticado.",
+      });
+    }
+
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        mensagem: "O nome da organização é obrigatório.",
+      });
+    }
+
+    const organizacaoAtualizada = await organizacaoService.editarOrganizacao(
+      organizacaoId,
+      usuarioId,
+      nome.trim()
+    );
+
+    return res.status(200).json({
+      mensagem: "Organização atualizada com sucesso!",
+      organizacao: organizacaoAtualizada,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar organização:", error);
+  
+    return res.status(error.status || 500).json({
+      mensagem: error.message || "Erro ao atualizar organização.",
+    });
+  }
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacao,
@@ -198,4 +287,7 @@ module.exports = {
   listarMembros,
   editarMembro,
   removerMembro,
+  listarOrganizacoesPorUsuario,
+  excluirOrganizacao,
+  editarOrganizacao
 };

@@ -1,16 +1,33 @@
-import React from 'react';
-import { useNavigate } from "react-router-dom";
-import RegisterForm from './RegisterForm';
-import ButtonBack from '../ButtonBack';
+import React from "react";
+import RegisterForm from "./RegisterForm";
 
 export default function RegisterCard() {
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-md overflow-hidden">
-      <ButtonBack />
-      <div className="px-6 pt-8 pb-4">
-        <h1 className="text-center text-xl font-extrabold text-slate-950">Crie sua conta</h1>
+    <div className="relative w-full max-w-[470px] overflow-hidden rounded-[24px] border-2 border-[#111111] bg-white shadow-[10px_12px_0_#111111]">
+      <div className="absolute right-6 top-6 flex gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-[#ff6b5f]" />
+        <span className="h-2 w-2 rounded-full bg-[#ffd84d]" />
+        <span className="h-2 w-2 rounded-full bg-[#b7dc58]" />
       </div>
-      <div className="px-6 pb-8">
+
+      <div className="px-7 pb-6 pt-8">
+        <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#111111]">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
+          Vamos começar
+        </div>
+
+        <h1 className="font-['Space_Grotesk',Arial,sans-serif] text-[clamp(36px,8vw,48px)] font-bold leading-[0.95] tracking-[-0.055em] text-[#111111]">
+          Crie sua
+          <br />
+          conta.
+        </h1>
+
+        <p className="mt-4 max-w-[360px] text-sm leading-relaxed text-[#686864]">
+          Dê o primeiro passo para organizar pessoas, funções e rodízios.
+        </p>
+      </div>
+
+      <div className="border-t-2 border-[#ffff] px-7 pb-8 pt-6">
         <RegisterForm />
       </div>
     </div>

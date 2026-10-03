@@ -24,7 +24,7 @@ const criarOrganizacao = async (nome, usuarioId) => {
           {
             usuario: usuarioId,
             organizacao: organizacao._id,
-            perfil: 'ADMIN',
+            perfil: 'Administrador',
           },
         ],
         { session }
@@ -64,32 +64,13 @@ const validarAdmin = async (organizacaoId, usuarioId) => {
     organizacao: organizacaoId,
   });
 
-  if (!membro || membro.perfil !== 'ADMIN') {
+  if (!membro || membro.perfil !== 'Administrador') {
     const erro = new Error(
       'Usuário não possui permissão de administrador nesta organização.'
     );
     erro.status = 403;
     throw erro;
   }
-};
-
-const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
-  const membro = await MembroOrganizacao.findOne({
-    usuario: usuarioId,
-    organizacao: organizacaoId,
-  });
-
-  if (!membro || !['ADMIN', 'GESTOR'].includes(membro.perfil)) {
-    const erro = new Error(
-      'Usuário não possui permissão de administrador ou gestor nesta organização.'
-    );
-
-    erro.status = 403;
-
-    throw erro;
-  }
-
-  return membro;
 };
 
 const validarMembro = async (organizacaoId, usuarioId) => {
@@ -104,7 +85,6 @@ const validarMembro = async (organizacaoId, usuarioId) => {
     );
 
     erro.status = 403;
-
     throw erro;
   }
 
@@ -144,11 +124,9 @@ const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) =>
 };
 
 const listarMembros = async (organizacaoId, usuarioId) => {
-  await validarAdminOuGestor(organizacaoId, usuarioId);
+  await validarMembro(organizacaoId, usuarioId);
 
-  return await MembroOrganizacao.find({
-    organizacao: organizacaoId,
-  })
+  return await MembroOrganizacao.find({ organizacao: organizacaoId })
     .populate('usuario', 'nome email')
     .exec();
 };
@@ -192,6 +170,54 @@ const removerMembro = async (organizacaoId, usuarioId, membroId) => {
   return membro;
 };
 
+const listarOrganizacoesPorUsuario = async (usuarioId) => {
+  const membros = await MembroOrganizacao.find({
+    usuario: usuarioId,
+  })
+    .populate("organizacao")
+    .exec();
+
+  return membros
+    .filter((membro) => membro.organizacao)
+    .map((membro) => membro.organizacao);
+};
+
+const excluirOrganizacao = async (organizacaoId, usuarioId) => {
+  await validarAdmin(organizacaoId, usuarioId);
+
+  const organizacao = await Organizacao.findById(organizacaoId);
+
+  if (!organizacao) {
+    const erro = new Error("Organização não encontrada.");
+    erro.status = 404;
+    throw erro;
+  }
+
+  await MembroOrganizacao.deleteMany({
+    organizacao: organizacaoId,
+  });
+
+  await organizacao.deleteOne();
+
+  return organizacao;
+};
+
+const editarOrganizacao = async (organizacaoId, usuarioId, novoNome) => {
+  await validarAdmin(organizacaoId, usuarioId);
+
+  const organizacao = await Organizacao.findById(organizacaoId);
+
+  if (!organizacao) { 
+    const erro = new Error("Organização não encontrada.");
+    erro.status = 404;
+    throw erro;
+  }
+
+  organizacao.nome = novoNome.trim();
+  await organizacao.save();
+  return organizacao;
+};
+
 module.exports = {
   criarOrganizacao,
   buscarOrganizacaoPorId,
@@ -199,7 +225,7 @@ module.exports = {
   listarMembros,
   editarMembro,
   removerMembro,
-  validarAdmin,
-  validarAdminOuGestor,
-  validarMembro,
+  listarOrganizacoesPorUsuario,
+  excluirOrganizacao,
+  editarOrganizacao
 };
