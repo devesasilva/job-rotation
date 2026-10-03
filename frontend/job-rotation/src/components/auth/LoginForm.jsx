@@ -126,10 +126,10 @@ export default function LoginForm() {
       </button>
 
       <Link
-        to="/login"
+        to="/register"
         className="mt-5 block text-center text-sm font-semibold text-[#111111] underline decoration-[#ffd84d] decoration-2 underline-offset-4 transition-colors hover:text-[#686864]"
       >
-        Esqueci minha senha
+        Não tem uma conta? Cadastre-se
       </Link>
     </form>
   );
