@@ -39,7 +39,10 @@ const criarOrganizacao = async (nome, usuarioId) => {
   }
 };
 
-const buscarOrganizacaoPorId = async (organizacaoId, usuarioId) => {
+const buscarOrganizacaoPorId = async (
+  organizacaoId,
+  usuarioId
+) => {
   const membro = await MembroOrganizacao.findOne({
     usuario: usuarioId,
     organizacao: organizacaoId,
@@ -51,14 +54,16 @@ const buscarOrganizacaoPorId = async (organizacaoId, usuarioId) => {
     );
 
     erro.status = 403;
-
     throw erro;
   }
 
   return Organizacao.findById(organizacaoId);
 };
 
-const validarAdmin = async (organizacaoId, usuarioId) => {
+const validarAdmin = async (
+  organizacaoId,
+  usuarioId
+) => {
   const membro = await MembroOrganizacao.findOne({
     usuario: usuarioId,
     organizacao: organizacaoId,
@@ -68,12 +73,18 @@ const validarAdmin = async (organizacaoId, usuarioId) => {
     const erro = new Error(
       'Usuário não possui permissão de administrador nesta organização.'
     );
+
     erro.status = 403;
     throw erro;
   }
+
+  return membro;
 };
 
-const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
+const validarAdminOuModerador = async (
+  organizacaoId,
+  usuarioId
+) => {
   const membro = await MembroOrganizacao.findOne({
     usuario: usuarioId,
     organizacao: organizacaoId,
@@ -82,10 +93,10 @@ const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
   if (
     !membro ||
     (membro.perfil !== 'Administrador' &&
-      membro.perfil !== 'Gestor')
+      membro.perfil !== 'Moderador')
   ) {
     const erro = new Error(
-      'Usuário não possui permissão para acessar esta função.'
+      'Usuário não possui permissão para realizar esta ação.'
     );
 
     erro.status = 403;
@@ -95,7 +106,10 @@ const validarAdminOuGestor = async (organizacaoId, usuarioId) => {
   return membro;
 };
 
-const validarMembro = async (organizacaoId, usuarioId) => {
+const validarMembro = async (
+  organizacaoId,
+  usuarioId
+) => {
   const membro = await MembroOrganizacao.findOne({
     usuario: usuarioId,
     organizacao: organizacaoId,
@@ -113,24 +127,41 @@ const validarMembro = async (organizacaoId, usuarioId) => {
   return membro;
 };
 
-const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) => {
-  await validarAdmin(organizacaoId, usuarioId);
+const adicionarMembro = async (
+  organizacaoId,
+  usuarioId,
+  emailMembro,
+  perfil
+) => {
+  await validarAdminOuModerador(
+    organizacaoId,
+    usuarioId
+  );
 
-  const usuarioValido = await Usuario.findOne({ email: emailMembro });
+  const usuarioValido = await Usuario.findOne({
+    email: emailMembro,
+  });
 
   if (!usuarioValido) {
-    const erro = new Error('Usuário não encontrado.');
+    const erro = new Error(
+      'Usuário não encontrado.'
+    );
+
     erro.status = 404;
     throw erro;
   }
 
-  const membroExistente = await MembroOrganizacao.findOne({
-    organizacao: organizacaoId,
-    usuario: usuarioValido._id,
-  });
+  const membroExistente =
+    await MembroOrganizacao.findOne({
+      organizacao: organizacaoId,
+      usuario: usuarioValido._id,
+    });
 
   if (membroExistente) {
-    const erro = new Error('Usuário já é membro desta organização.');
+    const erro = new Error(
+      'Usuário já é membro desta organização.'
+    );
+
     erro.status = 400;
     throw erro;
   }
@@ -142,19 +173,36 @@ const adicionarMembro = async (organizacaoId, usuarioId, emailMembro, perfil) =>
   });
 
   await novoMembro.save();
+
   return novoMembro;
 };
 
-const listarMembros = async (organizacaoId, usuarioId) => {
-  await validarMembro(organizacaoId, usuarioId);
+const listarMembros = async (
+  organizacaoId,
+  usuarioId
+) => {
+  await validarMembro(
+    organizacaoId,
+    usuarioId
+  );
 
-  return await MembroOrganizacao.find({ organizacao: organizacaoId })
+  return await MembroOrganizacao.find({
+    organizacao: organizacaoId,
+  })
     .populate('usuario', 'nome email')
     .exec();
 };
 
-const editarMembro = async (organizacaoId, usuarioId, membroId, novoPerfil) => {
-  await validarAdmin(organizacaoId, usuarioId);
+const editarMembro = async (
+  organizacaoId,
+  usuarioId,
+  membroId,
+  novoPerfil
+) => {
+  await validarAdminOuModerador(
+    organizacaoId,
+    usuarioId
+  );
 
   const membro = await MembroOrganizacao.findOne({
     _id: membroId,
@@ -162,7 +210,10 @@ const editarMembro = async (organizacaoId, usuarioId, membroId, novoPerfil) => {
   });
 
   if (!membro) {
-    const erro = new Error('Membro não encontrado nesta organização.');
+    const erro = new Error(
+      'Membro não encontrado nesta organização.'
+    );
+
     erro.status = 404;
     throw erro;
   }
@@ -174,8 +225,15 @@ const editarMembro = async (organizacaoId, usuarioId, membroId, novoPerfil) => {
   return membro;
 };
 
-const removerMembro = async (organizacaoId, usuarioId, membroId) => {
-  await validarAdmin(organizacaoId, usuarioId);
+const removerMembro = async (
+  organizacaoId,
+  usuarioId,
+  membroId
+) => {
+  await validarAdminOuModerador(
+    organizacaoId,
+    usuarioId
+  );
 
   const membro = await MembroOrganizacao.findOne({
     _id: membroId,
@@ -183,20 +241,26 @@ const removerMembro = async (organizacaoId, usuarioId, membroId) => {
   });
 
   if (!membro) {
-    const erro = new Error('Membro não encontrado nesta organização.');
+    const erro = new Error(
+      'Membro não encontrado nesta organização.'
+    );
+
     erro.status = 404;
     throw erro;
   }
 
   await membro.deleteOne();
+
   return membro;
 };
 
-const listarOrganizacoesPorUsuario = async (usuarioId) => {
+const listarOrganizacoesPorUsuario = async (
+  usuarioId
+) => {
   const membros = await MembroOrganizacao.find({
     usuario: usuarioId,
   })
-    .populate("organizacao")
+    .populate('organizacao')
     .exec();
 
   return membros
@@ -204,13 +268,23 @@ const listarOrganizacoesPorUsuario = async (usuarioId) => {
     .map((membro) => membro.organizacao);
 };
 
-const excluirOrganizacao = async (organizacaoId, usuarioId) => {
-  await validarAdmin(organizacaoId, usuarioId);
+const excluirOrganizacao = async (
+  organizacaoId,
+  usuarioId
+) => {
+  await validarAdmin(
+    organizacaoId,
+    usuarioId
+  );
 
-  const organizacao = await Organizacao.findById(organizacaoId);
+  const organizacao =
+    await Organizacao.findById(organizacaoId);
 
   if (!organizacao) {
-    const erro = new Error("Organização não encontrada.");
+    const erro = new Error(
+      'Organização não encontrada.'
+    );
+
     erro.status = 404;
     throw erro;
   }
@@ -224,19 +298,32 @@ const excluirOrganizacao = async (organizacaoId, usuarioId) => {
   return organizacao;
 };
 
-const editarOrganizacao = async (organizacaoId, usuarioId, novoNome) => {
-  await validarAdmin(organizacaoId, usuarioId);
+const editarOrganizacao = async (
+  organizacaoId,
+  usuarioId,
+  novoNome
+) => {
+  await validarAdmin(
+    organizacaoId,
+    usuarioId
+  );
 
-  const organizacao = await Organizacao.findById(organizacaoId);
+  const organizacao =
+    await Organizacao.findById(organizacaoId);
 
-  if (!organizacao) { 
-    const erro = new Error("Organização não encontrada.");
+  if (!organizacao) {
+    const erro = new Error(
+      'Organização não encontrada.'
+    );
+
     erro.status = 404;
     throw erro;
   }
 
   organizacao.nome = novoNome.trim();
+
   await organizacao.save();
+
   return organizacao;
 };
 
@@ -251,5 +338,6 @@ module.exports = {
   excluirOrganizacao,
   editarOrganizacao,
   validarAdmin,
-  validarAdminOuGestor
+  validarAdminOuModerador,
+  validarMembro,
 };
