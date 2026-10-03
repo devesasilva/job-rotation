@@ -1,12 +1,19 @@
 const Funcao = require('../models/Funcao');
-const { validarAdmin, validarAdminOuGestor } = require('./organizacaoService');
+
+const {
+  validarAdminOuModerador,
+  validarMembro,
+} = require('./organizacaoService');
 
 const criarFuncao = async (
   organizacaoId,
   usuarioId,
   dados
 ) => {
-  await validarAdmin(organizacaoId, usuarioId);
+  await validarAdminOuModerador(
+    organizacaoId,
+    usuarioId
+  );
 
   if (!dados.nome || !dados.nome.trim()) {
     const erro = new Error(
@@ -14,7 +21,6 @@ const criarFuncao = async (
     );
 
     erro.status = 400;
-
     throw erro;
   }
 
@@ -31,7 +37,10 @@ const listarFuncoes = async (
   organizacaoId,
   usuarioId
 ) => {
-  await validarAdminOuGestor(organizacaoId, usuarioId);
+  await validarMembro(
+    organizacaoId,
+    usuarioId
+  );
 
   return await Funcao.find({
     organizacao: organizacaoId,
