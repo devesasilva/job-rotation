@@ -5,7 +5,7 @@ const MembroOrganizacao = require('../models/MembroOrganizacao');
 const Funcao = require('../models/Funcao');
 
 const {
-  validarAdminOuGestor,
+  validarAdminOuModerador,
   validarMembro,
 } = require('./organizacaoService');
 
@@ -70,23 +70,23 @@ const agendarRodizio = async (
   );
 
   validarObjectId(
-    dados.participante,
-    'ID do participante'
+    dados.membro,
+    'ID do membro'
   );
 
-  await validarAdminOuGestor(
+  await validarAdminOuModerador(
     organizacaoId,
     usuarioId
   );
 
-  const participante = await MembroOrganizacao.findOne({
-    _id: dados.participante,
+  const membro = await MembroOrganizacao.findOne({
+    _id: dados.membro,
     organizacao: organizacaoId,
   });
 
-  if (!participante) {
+  if (!membro) {
     const erro = new Error(
-      'Participante não pertence a esta organização.'
+      'Membro não pertence a esta organização.'
     );
 
     erro.status = 400;
@@ -147,7 +147,7 @@ const agendarRodizio = async (
   // Evita duas rotações simultâneas
   const conflito = await Rodizio.findOne({
     organizacao: organizacaoId,
-    participante: participante._id,
+    membro: membro._id,
     dataInicio: {
       $lt: fim,
     },
@@ -158,7 +158,7 @@ const agendarRodizio = async (
 
   if (conflito) {
     const erro = new Error(
-      'O participante já possui uma rotação neste período.'
+      'O membro já possui uma rotação neste período.'
     );
 
     erro.status = 409;
@@ -168,7 +168,7 @@ const agendarRodizio = async (
 
   const rodizio = await Rodizio.create({
     organizacao: organizacaoId,
-    participante: participante._id,
+    membro: membro._id,
     funcao: dados.funcao,
     ciclo,
     dataInicio: inicio,
@@ -186,7 +186,7 @@ const listarRodizios = async (
   organizacaoId,
   usuarioId
 ) => {
-  await validarAdminOuGestor(
+  await validarAdminOuModerador(
     organizacaoId,
     usuarioId
   );
@@ -195,7 +195,7 @@ const listarRodizios = async (
     organizacao: organizacaoId,
   })
     .populate({
-      path: 'participante',
+      path: 'membro',
       populate: {
         path: 'usuario',
         select: 'nome email',
@@ -230,7 +230,7 @@ const buscarRodizioPorId = async (
     organizacao: organizacaoId,
   })
     .populate({
-      path: 'participante',
+      path: 'membro',
       populate: {
         path: 'usuario',
         select: 'nome email',
@@ -267,7 +267,7 @@ const listarMinhaRotacaoAtual = async (
 
   return Rodizio.find({
     organizacao: organizacaoId,
-    participante: membro._id,
+    membro: membro._id,
 
     dataInicio: {
       $lte: agora,

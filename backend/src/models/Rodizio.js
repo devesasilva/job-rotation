@@ -9,7 +9,7 @@ const rodizioSchema = new mongoose.Schema(
       index: true,
     },
 
-    participante: {
+    membro: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'MembroOrganizacao',
       required: true,

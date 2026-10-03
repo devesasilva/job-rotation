@@ -10,27 +10,36 @@ export default function Organizacao() {
 
   const [organizacao, setOrganizacao] = useState(null);
   const [membros, setMembros] = useState([]);
+  const [funcoes, setFuncoes] = useState([]);
+  const [rodizios, setRodizios] = useState([]);
+  const [minhaRotacaoAtual, setMinhaRotacaoAtual] = useState([]);
+  const [rodizioSelecionado, setRodizioSelecionado] = useState(null);
   const [usuario, setUsuario] = useState(null);
 
   const [abaAtiva, setAbaAtiva] = useState("membros");
 
   const [loading, setLoading] = useState(true);
   const [loadingMembros, setLoadingMembros] = useState(false);
+  const [loadingFuncoes, setLoadingFuncoes] = useState(false);
+  const [loadingRodizios, setLoadingRodizios] = useState(false);
+  const [loadingMinhaRotacao, setLoadingMinhaRotacao] = useState(false);
+  const [loadingRodizioDetalhe, setLoadingRodizioDetalhe] =
+    useState(false);
 
   const [errorMsg, setErrorMsg] = useState("");
   const [errorMembros, setErrorMembros] = useState("");
+  const [errorFuncoes, setErrorFuncoes] = useState("");
+  const [errorRodizios, setErrorRodizios] = useState("");
+  const [errorMinhaRotacao, setErrorMinhaRotacao] = useState("");
 
-  // Logout
   const [saindo, setSaindo] = useState(false);
 
-  // Modal de adicionar membro
   const [modalAdicionarAberto, setModalAdicionarAberto] =
     useState(false);
   const [emailMembro, setEmailMembro] = useState("");
   const [perfilMembro, setPerfilMembro] = useState("Membro");
   const [adicionandoMembro, setAdicionandoMembro] = useState(false);
 
-  // Modal de editar membro
   const [modalEditarAberto, setModalEditarAberto] =
     useState(false);
   const [membroSelecionado, setMembroSelecionado] =
@@ -38,11 +47,48 @@ export default function Organizacao() {
   const [perfilEditado, setPerfilEditado] = useState("");
   const [editandoMembro, setEditandoMembro] = useState(false);
 
+  const [membroParaExcluir, setMembroParaExcluir] =
+    useState(null);
+  const [excluindoMembro, setExcluindoMembro] =
+    useState(false);
+
+  const [modalAdicionarFuncaoAberto, setModalAdicionarFuncaoAberto] =
+    useState(false);
+  const [modalEditarFuncaoAberto, setModalEditarFuncaoAberto] =
+    useState(false);
+  const [funcaoSelecionada, setFuncaoSelecionada] = useState(null);
+  const [nomeFuncao, setNomeFuncao] = useState("");
+  const [descricaoFuncao, setDescricaoFuncao] = useState("");
+  const [adicionandoFuncao, setAdicionandoFuncao] = useState(false);
+  const [editandoFuncao, setEditandoFuncao] = useState(false);
+
+  const [funcaoParaExcluir, setFuncaoParaExcluir] = useState(null);
+  const [excluindoFuncao, setExcluindoFuncao] = useState(false);
+
+  const [modalAgendarRodizioAberto, setModalAgendarRodizioAberto] =
+    useState(false);
+  const [membroRodizio, setmembroRodizio] =
+    useState("");
+  const [funcaoRodizio, setFuncaoRodizio] = useState("");
+  const [cicloRodizio, setCicloRodizio] = useState("Mensal");
+  const [dataInicioRodizio, setDataInicioRodizio] = useState("");
+  const [dataFimRodizio, setDataFimRodizio] = useState("");
+  const [agendandoRodizio, setAgendandoRodizio] =
+    useState(false);
+
   useEffect(() => {
     carregarOrganizacao();
     carregarMembros();
+    carregarFuncoes();
     carregarUsuario();
   }, [id]);
+
+  useEffect(() => {
+    if (abaAtiva === "rodizios") {
+      carregarRodizios();
+      carregarMinhaRotacaoAtual();
+    }
+  }, [abaAtiva, id]);
 
   const getConfig = () => {
     const token = localStorage.getItem("token");
@@ -56,10 +102,6 @@ export default function Organizacao() {
         : {},
     };
   };
-
-  // ============================================================
-  // USUÁRIO
-  // ============================================================
 
   const carregarUsuario = async () => {
     try {
@@ -82,9 +124,6 @@ export default function Organizacao() {
     }
   };
 
-  /*
-   * Iniciais do usuário
-   */
   const obterIniciais = (nome = "") => {
     const partes = nome
       .trim()
@@ -106,10 +145,6 @@ export default function Organizacao() {
       partes[partes.length - 1][0]
     ).toUpperCase();
   };
-
-  // ============================================================
-  // LOGOUT
-  // ============================================================
 
   const handleLogout = async () => {
     if (saindo) {
@@ -140,17 +175,11 @@ export default function Organizacao() {
       );
     } finally {
       localStorage.removeItem("token");
-
       setUsuario(null);
       setSaindo(false);
-
       navigate("/login");
     }
   };
-
-  // ============================================================
-  // ORGANIZAÇÃO
-  // ============================================================
 
   const carregarOrganizacao = async () => {
     setLoading(true);
@@ -184,10 +213,6 @@ export default function Organizacao() {
     }
   };
 
-  // ============================================================
-  // MEMBROS
-  // ============================================================
-
   const carregarMembros = async () => {
     setLoadingMembros(true);
     setErrorMembros("");
@@ -220,9 +245,451 @@ export default function Organizacao() {
     }
   };
 
-  // ============================================================
-  // ADICIONAR MEMBRO
-  // ============================================================
+  const carregarFuncoes = async () => {
+    setLoadingFuncoes(true);
+    setErrorFuncoes("");
+
+    try {
+      const response = await axios.get(
+        `${API}/organizacoes/${id}/funcoes`,
+        getConfig()
+      );
+
+      setFuncoes(response.data || []);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar funções:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível carregar as funções."
+      );
+    } finally {
+      setLoadingFuncoes(false);
+    }
+  };
+
+  const carregarRodizios = async () => {
+    setLoadingRodizios(true);
+    setErrorRodizios("");
+
+    try {
+      const response = await axios.get(
+        `${API}/organizacoes/${id}/rodizios`,
+        getConfig()
+      );
+
+      setRodizios(response.data || []);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar rodízios:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorRodizios(
+        error.response?.data?.mensagem ||
+          "Não foi possível carregar os rodízios."
+      );
+    } finally {
+      setLoadingRodizios(false);
+    }
+  };
+
+  const carregarMinhaRotacaoAtual = async () => {
+    setLoadingMinhaRotacao(true);
+    setErrorMinhaRotacao("");
+
+    try {
+      const response = await axios.get(
+        `${API}/organizacoes/${id}/rodizios/minha`,
+        getConfig()
+      );
+
+      setMinhaRotacaoAtual(response.data || []);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar minha rotação atual:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorMinhaRotacao(
+        error.response?.data?.mensagem ||
+          "Não foi possível consultar sua rotação atual."
+      );
+    } finally {
+      setLoadingMinhaRotacao(false);
+    }
+  };
+
+  const abrirDetalhesRodizio = async (rodizioId) => {
+    if (!rodizioId) {
+      return;
+    }
+
+    setLoadingRodizioDetalhe(true);
+    setErrorRodizios("");
+
+    try {
+      const response = await axios.get(
+        `${API}/organizacoes/${id}/rodizios/${rodizioId}`,
+        getConfig()
+      );
+
+      setRodizioSelecionado(response.data);
+    } catch (error) {
+      console.error(
+        "Erro ao buscar rodízio:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorRodizios(
+        error.response?.data?.mensagem ||
+          "Não foi possível carregar os detalhes do rodízio."
+      );
+    } finally {
+      setLoadingRodizioDetalhe(false);
+    }
+  };
+
+  const formatarData = (data) => {
+    if (!data) {
+      return "Data não informada";
+    }
+
+    const dataFormatada = new Date(data);
+
+    if (Number.isNaN(dataFormatada.getTime())) {
+      return "Data inválida";
+    }
+
+    return dataFormatada.toLocaleDateString(
+      "pt-BR",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }
+    );
+  };
+
+  const formatarPeriodo = (inicio, fim) => {
+    return `${formatarData(inicio)} → ${formatarData(fim)}`;
+  };
+
+  const obterNomemembro = (rodizio) => {
+    return (
+      rodizio?.membro?.usuario?.nome ||
+      rodizio?.membro?.nome ||
+      rodizio?.membro?.usuario?.email ||
+      "membro"
+    );
+  };
+
+  const abrirModalAgendarRodizio = () => {
+    setmembroRodizio("");
+    setFuncaoRodizio("");
+    setCicloRodizio("Mensal");
+    setDataInicioRodizio("");
+    setDataFimRodizio("");
+    setErrorRodizios("");
+    setModalAgendarRodizioAberto(true);
+  };
+
+  const fecharModalAgendarRodizio = () => {
+    if (agendandoRodizio) {
+      return;
+    }
+
+    setModalAgendarRodizioAberto(false);
+    setmembroRodizio("");
+    setFuncaoRodizio("");
+    setCicloRodizio("Mensal");
+    setDataInicioRodizio("");
+    setDataFimRodizio("");
+  };
+
+  const handleAgendarRodizio = async (e) => {
+    e.preventDefault();
+
+    if (!membroRodizio) {
+      setErrorRodizios(
+        "Selecione o membro."
+      );
+      return;
+    }
+
+    if (!funcaoRodizio) {
+      setErrorRodizios(
+        "Selecione a função."
+      );
+      return;
+    }
+
+    if (!dataInicioRodizio) {
+      setErrorRodizios(
+        "Informe a data de início."
+      );
+      return;
+    }
+
+    if (!dataFimRodizio) {
+      setErrorRodizios(
+        "Informe a data de término."
+      );
+      return;
+    }
+
+    const inicio = new Date(dataInicioRodizio);
+    const fim = new Date(dataFimRodizio);
+
+    if (inicio >= fim) {
+      setErrorRodizios(
+        "A data de início deve ser anterior à data de término."
+      );
+      return;
+    }
+
+    setAgendandoRodizio(true);
+    setErrorRodizios("");
+
+    try {
+      await axios.post(
+        `${API}/organizacoes/${id}/rodizios`,
+        {
+          membro: membroRodizio,
+          funcao: funcaoRodizio,
+          ciclo: cicloRodizio,
+          dataInicio: inicio.toISOString(),
+          dataFim: fim.toISOString(),
+        },
+        getConfig()
+      );
+
+      fecharModalAgendarRodizio();
+
+      await carregarRodizios();
+      await carregarMinhaRotacaoAtual();
+    } catch (error) {
+      console.error(
+        "Erro ao agendar rodízio:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      if (error.response?.status === 409) {
+        setErrorRodizios(
+          "O membro já possui uma rotação neste período."
+        );
+        return;
+      }
+
+      setErrorRodizios(
+        error.response?.data?.mensagem ||
+          "Não foi possível agendar o rodízio."
+      );
+    } finally {
+      setAgendandoRodizio(false);
+    }
+  };
+
+  const abrirModalAdicionarFuncao = () => {
+    setNomeFuncao("");
+    setDescricaoFuncao("");
+    setErrorFuncoes("");
+    setModalAdicionarFuncaoAberto(true);
+  };
+
+  const fecharModalAdicionarFuncao = () => {
+    if (adicionandoFuncao) {
+      return;
+    }
+
+    setModalAdicionarFuncaoAberto(false);
+    setNomeFuncao("");
+    setDescricaoFuncao("");
+  };
+
+  const handleAdicionarFuncao = async (e) => {
+    e.preventDefault();
+
+    if (!nomeFuncao.trim()) {
+      setErrorFuncoes(
+        "O nome da função é obrigatório."
+      );
+      return;
+    }
+
+    setAdicionandoFuncao(true);
+    setErrorFuncoes("");
+
+    try {
+      await axios.post(
+        `${API}/organizacoes/${id}/funcoes`,
+        {
+          nome: nomeFuncao.trim(),
+          descricao:
+            descricaoFuncao.trim() || undefined,
+        },
+        getConfig()
+      );
+
+      fecharModalAdicionarFuncao();
+      await carregarFuncoes();
+    } catch (error) {
+      console.error(
+        "Erro ao adicionar função:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível cadastrar a função."
+      );
+    } finally {
+      setAdicionandoFuncao(false);
+    }
+  };
+
+  const abrirModalEditarFuncao = (funcao) => {
+    setFuncaoSelecionada(funcao);
+    setNomeFuncao(funcao.nome || "");
+    setDescricaoFuncao(funcao.descricao || "");
+    setErrorFuncoes("");
+    setModalEditarFuncaoAberto(true);
+  };
+
+  const fecharModalEditarFuncao = () => {
+    if (editandoFuncao) {
+      return;
+    }
+
+    setModalEditarFuncaoAberto(false);
+    setFuncaoSelecionada(null);
+    setNomeFuncao("");
+    setDescricaoFuncao("");
+  };
+
+  const handleEditarFuncao = async (e) => {
+    e.preventDefault();
+
+    if (!nomeFuncao.trim()) {
+      setErrorFuncoes("O nome da função é obrigatório.");
+      return;
+    }
+
+    if (!funcaoSelecionada?._id) {
+      setErrorFuncoes("Função não encontrada.");
+      return;
+    }
+
+    setEditandoFuncao(true);
+    setErrorFuncoes("");
+
+    try {
+      await axios.put(
+        `${API}/organizacoes/${id}/funcoes/${funcaoSelecionada._id}`,
+        {
+          nome: nomeFuncao.trim(),
+          descricao: descricaoFuncao.trim() || undefined,
+        },
+        getConfig()
+      );
+
+      fecharModalEditarFuncao();
+      await carregarFuncoes();
+    } catch (error) {
+      console.error("Erro ao editar função:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível editar a função."
+      );
+    } finally {
+      setEditandoFuncao(false);
+    }
+  };
+
+  const handleExcluirFuncao = (funcao) => {
+    setFuncaoParaExcluir(funcao);
+    setErrorFuncoes("");
+  };
+
+  const confirmarExclusaoFuncao = async () => {
+    if (!funcaoParaExcluir?._id) {
+      return;
+    }
+
+    setExcluindoFuncao(true);
+    setErrorFuncoes("");
+
+    try {
+      await axios.delete(
+        `${API}/organizacoes/${id}/funcoes/${funcaoParaExcluir._id}`,
+        getConfig()
+      );
+
+      setFuncaoParaExcluir(null);
+      await carregarFuncoes();
+    } catch (error) {
+      console.error("Erro ao excluir função:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorFuncoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível excluir a função."
+      );
+    } finally {
+      setExcluindoFuncao(false);
+    }
+  };
 
   const abrirModalAdicionar = () => {
     setEmailMembro("");
@@ -287,15 +754,13 @@ export default function Organizacao() {
     }
   };
 
-  // ============================================================
-  // EDITAR MEMBRO
-  // ============================================================
-
   const abrirModalEditar = (membro) => {
     setMembroSelecionado(membro);
+
     setPerfilEditado(
       membro.perfil || "Membro"
     );
+
     setErrorMembros("");
     setModalEditarAberto(true);
   };
@@ -362,33 +827,26 @@ export default function Organizacao() {
     }
   };
 
-  // ============================================================
-  // REMOVER MEMBRO
-  // ============================================================
+  const handleRemoverMembro = (membro) => {
+    setMembroParaExcluir(membro);
+    setErrorMembros("");
+  };
 
-  const handleRemoverMembro = async (membro) => {
-    const nomeMembro =
-      membro.usuario?.nome ||
-      membro.nome ||
-      membro.usuario?.email ||
-      membro.email ||
-      "este membro";
-
-    const confirmar = window.confirm(
-      `Tem certeza que deseja remover ${nomeMembro} da organização?`
-    );
-
-    if (!confirmar) {
+  const confirmarRemocaoMembro = async () => {
+    if (!membroParaExcluir?._id) {
       return;
     }
 
+    setExcluindoMembro(true);
     setErrorMembros("");
 
     try {
       await axios.delete(
-        `${API}/organizacoes/${id}/membros/${membro._id}`,
+        `${API}/organizacoes/${id}/membros/${membroParaExcluir._id}`,
         getConfig()
       );
+
+      setMembroParaExcluir(null);
 
       await carregarMembros();
     } catch (error) {
@@ -407,21 +865,17 @@ export default function Organizacao() {
         error.response?.data?.mensagem ||
           "Não foi possível remover o membro."
       );
+    } finally {
+      setExcluindoMembro(false);
     }
   };
 
-  // ============================================================
-  // LOADING
-  // ============================================================
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-[#111111]">
-        {/* NAVBAR */}
         <header className="sticky top-0 z-30 border-b-2 border-[#111111] bg-white/95 backdrop-blur-[10px]">
           <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between gap-5">
-
-            {/* Logo */}
             <button
               type="button"
               onClick={() => navigate("/main")}
@@ -429,12 +883,9 @@ export default function Organizacao() {
             >
               <span className="relative grid h-[30px] w-[30px] place-items-center overflow-hidden rounded-lg border-2 border-[#111111] before:absolute before:left-[5px] before:top-[5px] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[#ff6b5f] after:absolute after:bottom-[5px] after:right-[5px] after:h-[7px] after:w-[7px] after:rounded-full after:bg-[#b7dc58]" />
 
-              <span>
-                Job Rotation
-              </span>
+              <span>Job Rotation</span>
             </button>
 
-            {/* Usuário */}
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
                 <p className="text-xs font-bold text-[#111111]">
@@ -448,13 +899,9 @@ export default function Organizacao() {
 
               <div
                 className="grid h-[42px] w-[42px] place-items-center rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold"
-                title={
-                  usuario?.nome || "Usuário"
-                }
+                title={usuario?.nome || "Usuário"}
               >
-                {obterIniciais(
-                  usuario?.nome
-                )}
+                {obterIniciais(usuario?.nome)}
               </div>
 
               <button
@@ -480,9 +927,7 @@ export default function Organizacao() {
                 </svg>
 
                 <span className="hidden sm:inline">
-                  {saindo
-                    ? "Saindo..."
-                    : "Sair"}
+                  {saindo ? "Saindo..." : "Sair"}
                 </span>
               </button>
             </div>
@@ -500,14 +945,8 @@ export default function Organizacao() {
 
   return (
     <div className="min-h-screen bg-white text-[#111111]">
-
-      {/* ============================================================
-          NAVBAR
-      ============================================================ */}
       <header className="sticky top-0 z-30 border-b-2 border-[#111111] bg-white/95 backdrop-blur-[10px]">
         <div className="mx-auto flex h-[74px] w-[min(1160px,calc(100%-40px))] items-center justify-between gap-5">
-
-          {/* Logo */}
           <button
             type="button"
             onClick={() => navigate("/main")}
@@ -515,14 +954,10 @@ export default function Organizacao() {
           >
             <span className="relative grid h-[30px] w-[30px] place-items-center overflow-hidden rounded-lg border-2 border-[#111111] before:absolute before:left-[5px] before:top-[5px] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[#ff6b5f] after:absolute after:bottom-[5px] after:right-[5px] after:h-[7px] after:w-[7px] after:rounded-full after:bg-[#b7dc58]" />
 
-            <span>
-              Job Rotation
-            </span>
+            <span>Job Rotation</span>
           </button>
 
-          {/* Usuário + Logout */}
           <div className="flex items-center gap-3">
-
             <div className="hidden text-right sm:block">
               <p className="text-xs font-bold text-[#111111]">
                 {usuario?.nome || "Usuário"}
@@ -533,19 +968,13 @@ export default function Organizacao() {
               </p>
             </div>
 
-            {/* Avatar */}
             <div
               className="grid h-[42px] w-[42px] place-items-center rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold"
-              title={
-                usuario?.nome || "Usuário"
-              }
+              title={usuario?.nome || "Usuário"}
             >
-              {obterIniciais(
-                usuario?.nome
-              )}
+              {obterIniciais(usuario?.nome)}
             </div>
 
-            {/* Logout */}
             <button
               type="button"
               onClick={handleLogout}
@@ -569,21 +998,14 @@ export default function Organizacao() {
               </svg>
 
               <span className="hidden sm:inline">
-                {saindo
-                  ? "Saindo..."
-                  : "Sair"}
+                {saindo ? "Saindo..." : "Sair"}
               </span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* ============================================================
-          CONTEÚDO
-      ============================================================ */}
       <main className="mx-auto w-[min(1160px,calc(100%-40px))] py-10 sm:py-14">
-
-        {/* VOLTAR */}
         <button
           type="button"
           onClick={() => navigate("/main")}
@@ -615,7 +1037,6 @@ export default function Organizacao() {
           </div>
         ) : (
           <>
-            {/* CABEÇALHO DA ORGANIZAÇÃO */}
             <section className="mb-10">
               <div className="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
@@ -631,11 +1052,9 @@ export default function Organizacao() {
               </p>
             </section>
 
-            {/* ABAS */}
             <section>
               <div className="border-b-2 border-[#111111]">
                 <div className="flex gap-1 overflow-x-auto">
-
                   <button
                     type="button"
                     onClick={() => setAbaAtiva("membros")}
@@ -671,19 +1090,12 @@ export default function Organizacao() {
                   >
                     Rodízios
                   </button>
-
                 </div>
               </div>
 
-              {/* CONTEÚDO */}
               <div className="pt-8">
-
-                {/* =====================================================
-                    MEMBROS
-                ====================================================== */}
                 {abaAtiva === "membros" && (
                   <section>
-
                     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
@@ -718,7 +1130,6 @@ export default function Organizacao() {
                       </div>
                     ) : membros.length === 0 ? (
                       <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
-
                         <div className="grid h-12 w-12 place-items-center rounded-xl border-2 border-[#111111] bg-[#b7dc58] text-xl font-bold">
                           +
                         </div>
@@ -738,25 +1149,20 @@ export default function Organizacao() {
                         >
                           + Adicionar membro
                         </button>
-
                       </div>
                     ) : (
                       <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
-
-                        {/* CABEÇALHO */}
                         <div className="hidden grid-cols-[1fr_180px_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] sm:grid">
                           <span>Membro</span>
                           <span>Perfil</span>
                           <span>Ações</span>
                         </div>
 
-                        {/* MEMBROS */}
                         {membros.map((membro) => (
                           <div
                             key={membro._id}
                             className="grid gap-4 border-b border-[#deded9] px-5 py-5 last:border-b-0 sm:grid-cols-[1fr_180px_180px] sm:items-center"
                           >
-
                             <div>
                               <p className="font-bold">
                                 {membro.usuario?.nome ||
@@ -773,19 +1179,15 @@ export default function Organizacao() {
 
                             <div>
                               <span className="inline-flex rounded-full border border-[#111111] bg-[#f8f7f4] px-3 py-1 text-xs font-bold">
-                                {membro.perfil ||
-                                  "Membro"}
+                                {membro.perfil || "Membro"}
                               </span>
                             </div>
 
                             <div className="flex gap-4">
-
                               <button
                                 type="button"
                                 onClick={() =>
-                                  abrirModalEditar(
-                                    membro
-                                  )
+                                  abrirModalEditar(membro)
                                 }
                                 className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline"
                               >
@@ -795,15 +1197,12 @@ export default function Organizacao() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  handleRemoverMembro(
-                                    membro
-                                  )
+                                  handleRemoverMembro(membro)
                                 }
                                 className="cursor-pointer text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline"
                               >
                                 Remover
                               </button>
-
                             </div>
                           </div>
                         ))}
@@ -812,73 +1211,341 @@ export default function Organizacao() {
                   </section>
                 )}
 
-                {/* =====================================================
-                    FUNÇÕES
-                ====================================================== */}
                 {abaAtiva === "funcoes" && (
                   <section>
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
+                          Funções
+                        </h2>
 
-                    <div className="mb-6">
-                      <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
-                        Funções
-                      </h2>
+                        <p className="mt-2 text-sm text-[#686864]">
+                          Funções disponíveis dentro da organização.
+                        </p>
+                      </div>
 
-                      <p className="mt-2 text-sm text-[#686864]">
-                        Funções disponíveis dentro da organização.
-                      </p>
+                      <button
+                        type="button"
+                        onClick={abrirModalAdicionarFuncao}
+                        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                      >
+                        + Adicionar função
+                      </button>
                     </div>
 
-                    <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
-                      <h3 className="font-['Space_Grotesk',Arial,sans-serif] text-2xl font-bold">
-                        Funções
-                      </h3>
+                    {errorFuncoes && (
+                      <div className="mb-5 rounded-[12px] border-2 border-[#ff6b5f] bg-[#fff1ef] px-4 py-3 text-sm font-medium text-[#b9362d]">
+                        {errorFuncoes}
+                      </div>
+                    )}
 
-                      <p className="mt-3 text-sm leading-relaxed text-[#686864]">
-                        O gerenciamento de funções será exibido aqui.
-                      </p>
-                    </div>
+                    {loadingFuncoes ? (
+                      <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 text-center">
+                        <p className="font-semibold text-[#686864]">
+                          Carregando funções...
+                        </p>
+                      </div>
+                    ) : funcoes.length === 0 ? (
+                      <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
+                        <div className="grid h-12 w-12 place-items-center rounded-xl border-2 border-[#111111] bg-[#b7dc58] text-xl font-bold">
+                          +
+                        </div>
 
+                        <h3 className="mt-5 font-['Space_Grotesk',Arial,sans-serif] text-2xl font-bold tracking-[-0.04em]">
+                          Nenhuma função
+                        </h3>
+
+                        <p className="mt-2 max-w-[500px] text-sm leading-relaxed text-[#686864]">
+                          Ainda não há funções cadastradas nesta organização.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={abrirModalAdicionarFuncao}
+                          className="mt-6 min-h-11 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                        >
+                          + Adicionar função
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
+                        <div className="hidden grid-cols-[1fr_2fr_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] sm:grid">
+                          <span>Função</span>
+                          <span>Descrição</span>
+                          <span>Ações</span>
+                        </div>
+
+                        {funcoes.map((funcao) => (
+                          <div
+                            key={funcao._id}
+                            className="grid gap-4 border-b border-[#deded9] px-5 py-5 last:border-b-0 sm:grid-cols-[1fr_2fr_180px] sm:items-center"
+                          >
+                            <div>
+                              <p className="font-bold">
+                                {funcao.nome}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-sm leading-relaxed text-[#686864]">
+                                {funcao.descricao ||
+                                  "Nenhuma descrição informada."}
+                              </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  abrirModalEditarFuncao(funcao)
+                                }
+                                className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline"
+                              >
+                                Editar
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleExcluirFuncao(funcao)
+                                }
+                                className="cursor-pointer text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </section>
                 )}
 
-                {/* =====================================================
-                    RODÍZIOS
-                ====================================================== */}
                 {abaAtiva === "rodizios" && (
                   <section>
+                    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
+                          Rodízios
+                        </h2>
 
-                    <div className="mb-6">
-                      <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
-                        Rodízios
-                      </h2>
+                        <p className="mt-2 text-sm text-[#686864]">
+                          Organize os períodos em que cada membro exercerá uma função.
+                        </p>
+                      </div>
 
-                      <p className="mt-2 text-sm text-[#686864]">
-                        Rodízios cadastrados nesta organização.
-                      </p>
+                      <button
+                        type="button"
+                        onClick={abrirModalAgendarRodizio}
+                        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                      >
+                        + Agendar rodízio
+                      </button>
                     </div>
 
-                    <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
-                      <h3 className="font-['Space_Grotesk',Arial,sans-serif] text-2xl font-bold">
-                        Rodízios
-                      </h3>
+                    <div className="mb-8 rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-6 sm:p-7">
+                      <div className="mb-5 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
 
-                      <p className="mt-3 text-sm leading-relaxed text-[#686864]">
-                        O gerenciamento de rodízios será exibido aqui.
-                      </p>
+                        <h3 className="font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold tracking-[-0.03em]">
+                          Minha rotação atual
+                        </h3>
+                      </div>
+
+                      {loadingMinhaRotacao ? (
+                        <p className="text-sm font-semibold text-[#686864]">
+                          Consultando sua rotação...
+                        </p>
+                      ) : errorMinhaRotacao ? (
+                        <p className="text-sm font-medium text-[#b9362d]">
+                          {errorMinhaRotacao}
+                        </p>
+                      ) : minhaRotacaoAtual.length === 0 ? (
+                        <p className="text-sm leading-relaxed text-[#686864]">
+                          Você não possui uma rotação ativa neste momento.
+                        </p>
+                      ) : (
+                        <div className="grid gap-4">
+                          {minhaRotacaoAtual.map((rodizio) => (
+                            <div
+                              key={rodizio._id}
+                              className="rounded-[14px] border-2 border-[#111111] bg-white p-5"
+                            >
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                                    Função atual
+                                  </p>
+
+                                  <p className="mt-1 font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold">
+                                    {rodizio.funcao?.nome ||
+                                      "Função não informada"}
+                                  </p>
+                                </div>
+
+                                <span className="inline-flex w-fit rounded-full border border-[#111111] bg-[#b7dc58] px-3 py-1 text-xs font-bold">
+                                  {rodizio.ciclo || "Mensal"}
+                                </span>
+                              </div>
+
+                              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                                    Início
+                                  </p>
+
+                                  <p className="mt-1 text-sm font-semibold">
+                                    {formatarData(
+                                      rodizio.dataInicio
+                                    )}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                                    Término
+                                  </p>
+
+                                  <p className="mt-1 text-sm font-semibold">
+                                    {formatarData(
+                                      rodizio.dataFim
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
+                    {errorRodizios && (
+                      <div className="mb-5 rounded-[12px] border-2 border-[#ff6b5f] bg-[#fff1ef] px-4 py-3 text-sm font-medium text-[#b9362d]">
+                        {errorRodizios}
+                      </div>
+                    )}
+
+                    {loadingRodizios ? (
+                      <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 text-center">
+                        <p className="font-semibold text-[#686864]">
+                          Carregando rodízios...
+                        </p>
+                      </div>
+                    ) : rodizios.length === 0 ? (
+                      <div className="rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-8 sm:p-10">
+                        <div className="grid h-12 w-12 place-items-center rounded-xl border-2 border-[#111111] bg-[#8eb9ff] text-xl font-bold">
+                          ↻
+                        </div>
+
+                        <h3 className="mt-5 font-['Space_Grotesk',Arial,sans-serif] text-2xl font-bold tracking-[-0.04em]">
+                          Nenhum rodízio
+                        </h3>
+
+                        <p className="mt-2 max-w-[550px] text-sm leading-relaxed text-[#686864]">
+                          Ainda não há rotações cadastradas nesta organização.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={abrirModalAgendarRodizio}
+                          className="mt-6 min-h-11 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                        >
+                          + Agendar rodízio
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
+                        <div className="hidden grid-cols-[1fr_1fr_1fr_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] lg:grid">
+                          <span>membro</span>
+                          <span>Função</span>
+                          <span>Período</span>
+                          <span>Ações</span>
+                        </div>
+
+                        {rodizios.map((rodizio) => (
+                          <div
+                            key={rodizio._id}
+                            className="grid gap-5 border-b border-[#deded9] px-5 py-5 last:border-b-0 lg:grid-cols-[1fr_1fr_1fr_180px] lg:items-center"
+                          >
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
+                                membro
+                              </p>
+
+                              <p className="mt-1 font-bold lg:mt-0">
+                                {obterNomemembro(
+                                  rodizio
+                                )}
+                              </p>
+
+                              {rodizio.membro?.usuario
+                                ?.email && (
+                                <p className="mt-1 text-sm text-[#686864]">
+                                  {
+                                    rodizio.membro
+                                      .usuario.email
+                                  }
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
+                                Função
+                              </p>
+
+                              <p className="mt-1 font-semibold lg:mt-0">
+                                {rodizio.funcao?.nome ||
+                                  "Função não informada"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
+                                Período
+                              </p>
+
+                              <p className="mt-1 text-sm font-medium lg:mt-0">
+                                {formatarPeriodo(
+                                  rodizio.dataInicio,
+                                  rodizio.dataFim
+                                )}
+                              </p>
+
+                              <span className="mt-2 inline-flex rounded-full border border-[#111111] bg-[#f8f7f4] px-3 py-1 text-xs font-bold">
+                                {rodizio.ciclo ||
+                                  "Mensal"}
+                              </span>
+                            </div>
+
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  abrirDetalhesRodizio(
+                                    rodizio._id
+                                  )
+                                }
+                                disabled={
+                                  loadingRodizioDetalhe
+                                }
+                                className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Ver detalhes
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </section>
                 )}
-
               </div>
             </section>
           </>
         )}
       </main>
 
-      {/* ============================================================
-          MODAL — ADICIONAR MEMBRO
-      ============================================================ */}
       {modalAdicionarAberto && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
@@ -889,7 +1556,6 @@ export default function Organizacao() {
           }}
         >
           <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
-
             <div className="mb-7">
               <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
@@ -908,7 +1574,6 @@ export default function Organizacao() {
             </div>
 
             <form onSubmit={handleAdicionarMembro}>
-
               <label
                 htmlFor="email-membro"
                 className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
@@ -964,7 +1629,6 @@ export default function Organizacao() {
               )}
 
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
                 <button
                   type="button"
                   onClick={fecharModalAdicionar}
@@ -983,16 +1647,12 @@ export default function Organizacao() {
                     ? "Adicionando..."
                     : "Adicionar membro →"}
                 </button>
-
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============================================================
-          MODAL — EDITAR MEMBRO
-      ============================================================ */}
       {modalEditarAberto && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
@@ -1003,7 +1663,6 @@ export default function Organizacao() {
           }}
         >
           <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
-
             <div className="mb-7">
               <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ffd84d]" />
@@ -1022,7 +1681,6 @@ export default function Organizacao() {
             </div>
 
             <form onSubmit={handleEditarMembro}>
-
               <label
                 htmlFor="perfil-editado"
                 className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
@@ -1034,9 +1692,7 @@ export default function Organizacao() {
                 id="perfil-editado"
                 value={perfilEditado}
                 onChange={(e) => {
-                  setPerfilEditado(
-                    e.target.value
-                  );
+                  setPerfilEditado(e.target.value);
                   setErrorMembros("");
                 }}
                 className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
@@ -1061,7 +1717,6 @@ export default function Organizacao() {
               )}
 
               <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
                 <button
                   type="button"
                   onClick={fecharModalEditar}
@@ -1080,9 +1735,667 @@ export default function Organizacao() {
                     ? "Salvando..."
                     : "Salvar alterações →"}
                 </button>
-
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {membroParaExcluir && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !excluindoMembro
+            ) {
+              setMembroParaExcluir(null);
+              setErrorMembros("");
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
+                Remover membro
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Remover este
+                <br />
+                membro?
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Deseja realmente remover{" "}
+                <strong className="font-bold text-[#111111]">
+                  {membroParaExcluir.usuario?.nome ||
+                    membroParaExcluir.nome ||
+                    membroParaExcluir.usuario?.email ||
+                    membroParaExcluir.email ||
+                    "este membro"}
+                </strong>{" "}
+                da organização?
+              </p>
+
+              <p className="mt-3 text-sm leading-relaxed text-[#b9362d]">
+                Essa ação removerá o membro desta organização.
+              </p>
+            </div>
+
+            {errorMembros && (
+              <div className="mb-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                {errorMembros}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={excluindoMembro}
+                onClick={() => {
+                  setMembroParaExcluir(null);
+                  setErrorMembros("");
+                }}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarRemocaoMembro}
+                disabled={excluindoMembro}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#ff6b5f] px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                {excluindoMembro
+                  ? "Removendo..."
+                  : "Remover membro"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalAdicionarFuncaoAberto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              fecharModalAdicionarFuncao();
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
+                Nova função
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Adicione uma
+                <br />
+                função.
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Cadastre uma nova função para esta organização.
+              </p>
+            </div>
+
+            <form onSubmit={handleAdicionarFuncao}>
+              <label
+                htmlFor="nome-funcao"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Nome
+              </label>
+
+              <input
+                id="nome-funcao"
+                type="text"
+                value={nomeFuncao}
+                onChange={(e) => {
+                  setNomeFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                placeholder="Ex.: Desenvolvedor Backend"
+                autoFocus
+                className="w-full border-0 border-b-2 border-[#deded9] bg-transparent px-0 py-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-[#aaaaaa] focus:border-[#111111]"
+              />
+
+              <label
+                htmlFor="descricao-funcao"
+                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Descrição
+              </label>
+
+              <textarea
+                id="descricao-funcao"
+                value={descricaoFuncao}
+                onChange={(e) => {
+                  setDescricaoFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                placeholder="Ex.: Responsável pelo desenvolvimento das APIs."
+                rows={4}
+                className="w-full resize-none rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              />
+
+              {errorFuncoes && (
+                <div className="mt-4 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                  {errorFuncoes}
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={fecharModalAdicionarFuncao}
+                  disabled={adicionandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={adicionandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {adicionandoFuncao
+                    ? "Adicionando..."
+                    : "Adicionar função →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalEditarFuncaoAberto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              fecharModalEditarFuncao();
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ffd84d]" />
+                Editar função
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Edite a
+                <br />
+                função.
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Atualize o nome e a descrição desta função.
+              </p>
+            </div>
+
+            <form onSubmit={handleEditarFuncao}>
+              <label
+                htmlFor="nome-funcao-editada"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Nome
+              </label>
+
+              <input
+                id="nome-funcao-editada"
+                type="text"
+                value={nomeFuncao}
+                onChange={(e) => {
+                  setNomeFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                autoFocus
+                className="w-full border-0 border-b-2 border-[#deded9] bg-transparent px-0 py-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-[#aaaaaa] focus:border-[#111111]"
+              />
+
+              <label
+                htmlFor="descricao-funcao-editada"
+                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Descrição
+              </label>
+
+              <textarea
+                id="descricao-funcao-editada"
+                value={descricaoFuncao}
+                onChange={(e) => {
+                  setDescricaoFuncao(e.target.value);
+                  setErrorFuncoes("");
+                }}
+                rows={4}
+                className="w-full resize-none rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              />
+
+              {errorFuncoes && (
+                <div className="mt-4 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                  {errorFuncoes}
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={fecharModalEditarFuncao}
+                  disabled={editandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={editandoFuncao}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editandoFuncao
+                    ? "Salvando..."
+                    : "Salvar alterações →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {funcaoParaExcluir && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/50 px-5 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !excluindoFuncao
+            ) {
+              setFuncaoParaExcluir(null);
+              setErrorFuncoes("");
+            }
+          }}
+        >
+          <div className="w-full max-w-[500px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
+                Excluir função
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Excluir esta
+                <br />
+                função?
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Deseja realmente excluir {" "}
+                <strong className="font-bold text-[#111111]">
+                  {funcaoParaExcluir.nome || "esta função"}
+                </strong>
+                ?
+              </p>
+
+              <p className="mt-3 text-sm leading-relaxed text-[#b9362d]">
+                Essa ação removerá a função da organização.
+              </p>
+            </div>
+
+            {errorFuncoes && (
+              <div className="mb-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                {errorFuncoes}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={excluindoFuncao}
+                onClick={() => {
+                  setFuncaoParaExcluir(null);
+                  setErrorFuncoes("");
+                }}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarExclusaoFuncao}
+                disabled={excluindoFuncao}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#ff6b5f] px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                {excluindoFuncao
+                  ? "Excluindo..."
+                  : "Excluir função"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalAgendarRodizioAberto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              fecharModalAgendarRodizio();
+            }
+          }}
+        >
+          <div className="w-full max-w-[560px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#8eb9ff]" />
+                Novo rodízio
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Agende uma
+                <br />
+                rotação.
+              </h2>
+
+              <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+                Escolha quem participará, qual função exercerá e durante qual período.
+              </p>
+            </div>
+
+            <form onSubmit={handleAgendarRodizio}>
+              <label
+                htmlFor="membro-rodizio"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                membro
+              </label>
+
+              <select
+                id="membro-rodizio"
+                value={membroRodizio}
+                onChange={(e) => {
+                  setmembroRodizio(e.target.value);
+                  setErrorRodizios("");
+                }}
+                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              >
+                <option value="">
+                  Selecione um membro
+                </option>
+
+                {membros.map((membro) => (
+                  <option
+                    key={membro._id}
+                    value={membro._id}
+                  >
+                    {membro.usuario?.nome ||
+                      membro.nome ||
+                      membro.usuario?.email ||
+                      membro.email ||
+                      "Usuário"}
+                  </option>
+                ))}
+              </select>
+
+              <label
+                htmlFor="funcao-rodizio"
+                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Função
+              </label>
+
+              <select
+                id="funcao-rodizio"
+                value={funcaoRodizio}
+                onChange={(e) => {
+                  setFuncaoRodizio(e.target.value);
+                  setErrorRodizios("");
+                }}
+                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              >
+                <option value="">
+                  Selecione uma função
+                </option>
+
+                {funcoes.map((funcao) => (
+                  <option
+                    key={funcao._id}
+                    value={funcao._id}
+                  >
+                    {funcao.nome}
+                  </option>
+                ))}
+              </select>
+
+              <label
+                htmlFor="ciclo-rodizio"
+                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+              >
+                Ciclo
+              </label>
+
+              <select
+                id="ciclo-rodizio"
+                value={cicloRodizio}
+                onChange={(e) => {
+                  setCicloRodizio(e.target.value);
+                  setErrorRodizios("");
+                }}
+                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+              >
+                <option value="Diário">
+                  Diário
+                </option>
+
+                <option value="Semanal">
+                  Semanal
+                </option>
+
+                <option value="Quinzenal">
+                  Quinzenal
+                </option>
+
+                <option value="Mensal">
+                  Mensal
+                </option>
+
+                <option value="Anual">
+                  Anual
+                </option>
+              </select>
+
+              <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="data-inicio-rodizio"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+                  >
+                    Data de início
+                  </label>
+
+                  <input
+                    id="data-inicio-rodizio"
+                    type="datetime-local"
+                    value={dataInicioRodizio}
+                    onChange={(e) => {
+                      setDataInicioRodizio(
+                        e.target.value
+                      );
+                      setErrorRodizios("");
+                    }}
+                    className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="data-fim-rodizio"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+                  >
+                    Data de término
+                  </label>
+
+                  <input
+                    id="data-fim-rodizio"
+                    type="datetime-local"
+                    value={dataFimRodizio}
+                    onChange={(e) => {
+                      setDataFimRodizio(
+                        e.target.value
+                      );
+                      setErrorRodizios("");
+                    }}
+                    className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
+                  />
+                </div>
+              </div>
+
+              {errorRodizios && (
+                <div className="mt-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                  {errorRodizios}
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={fecharModalAgendarRodizio}
+                  disabled={agendandoRodizio}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={agendandoRodizio}
+                  className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {agendandoRodizio
+                    ? "Agendando..."
+                    : "Agendar rodízio →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {rodizioSelecionado && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setRodizioSelecionado(null);
+            }
+          }}
+        >
+          <div className="w-full max-w-[520px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#8eb9ff]" />
+                Detalhes do rodízio
+              </div>
+
+              <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+                Rotação
+                <br />
+                agendada.
+              </h2>
+            </div>
+
+            <div className="grid gap-5">
+              <div className="rounded-[14px] border-2 border-[#111111] bg-[#f8f7f4] p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                  membro
+                </p>
+
+                <p className="mt-2 font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold">
+                  {obterNomemembro(
+                    rodizioSelecionado
+                  )}
+                </p>
+
+                {rodizioSelecionado.membro
+                  ?.usuario?.email && (
+                  <p className="mt-1 text-sm text-[#686864]">
+                    {
+                      rodizioSelecionado
+                        .membro.usuario.email
+                    }
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                    Função
+                  </p>
+
+                  <p className="mt-2 font-bold">
+                    {rodizioSelecionado.funcao?.nome ||
+                      "Função não informada"}
+                  </p>
+
+                  {rodizioSelecionado.funcao
+                    ?.descricao && (
+                    <p className="mt-2 text-sm leading-relaxed text-[#686864]">
+                      {
+                        rodizioSelecionado.funcao
+                          .descricao
+                      }
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                    Ciclo
+                  </p>
+
+                  <span className="mt-2 inline-flex rounded-full border border-[#111111] bg-[#b7dc58] px-3 py-1 text-xs font-bold">
+                    {rodizioSelecionado.ciclo ||
+                      "Mensal"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                  Período
+                </p>
+
+                <p className="mt-2 font-bold">
+                  {formatarPeriodo(
+                    rodizioSelecionado.dataInicio,
+                    rodizioSelecionado.dataFim
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  setRodizioSelecionado(null)
+                }
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
