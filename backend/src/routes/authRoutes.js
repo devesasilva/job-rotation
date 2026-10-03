@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
@@ -91,5 +92,26 @@ router.get('/me', authMiddleware, authController.me);
 router.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'Acesso autorizado', user: req.user });
 });
+
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Encerra a sessão do usuário
+ *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout realizado com sucesso
+ *       401:
+ *         description: Token inválido ou não fornecido
+ */
+router.post(
+    '/logout',
+    authMiddleware,
+    authController.logout
+);
 
 module.exports = router;
