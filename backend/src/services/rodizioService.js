@@ -1,59 +1,294 @@
-// services/rodizioService.js
-const Usuario = require('../models/Usuario');
+const mongoose = require('mongoose');
+
 const Rodizio = require('../models/Rodizio');
-//const Setor = require('../models/Setor');
+const MembroOrganizacao = require('../models/MembroOrganizacao');
+const Funcao = require('../models/Funcao');
 
-async function sugerirAlocacoes(rodizioId) {
-  const rodizio = await Rodizio.findById(rodizioId).populate('setor');
+const {
+  validarAdminOuGestor,
+  validarMembro,
+} = require('./organizacaoService');
 
-  if (!rodizio || !rodizio.necessidades) {
-    throw new Error('Rodízio inválido ou sem necessidades definidas.');
+const validarObjectId = (id, campo) => {
+  if (!mongoose.isValidObjectId(id)) {
+    const erro = new Error(`${campo} inválido.`);
+    erro.status = 400;
+
+    throw erro;
+  }
+};
+
+const validarPeriodo = (dataInicio, dataFim) => {
+  const inicio = new Date(dataInicio);
+  const fim = new Date(dataFim);
+
+  if (
+    Number.isNaN(inicio.getTime()) ||
+    Number.isNaN(fim.getTime())
+  ) {
+    const erro = new Error(
+      'Data de início ou término inválida.'
+    );
+
+    erro.status = 400;
+
+    throw erro;
   }
 
-  // 1. Obter todos os usuários disponíveis
-  const usuarios = await Usuario.find({});
+  if (inicio >= fim) {
+    const erro = new Error(
+      'A data de início deve ser anterior à data de término.'
+    );
 
-  const sugestoes = usuarios.map(usuario => {
-    // Peso 1: Habilidades e formação compatíveis com as necessidades do rodízio
-    const matchHabilidades = rodizio.necessidades.habilidades.filter(hab =>
-      usuario.habilidades?.includes(hab)
-    ).length;
+    erro.status = 400;
 
-    const matchFormacao = rodizio.necessidades.formacao?.includes(usuario.formacao) ? 1 : 0;
+    throw erro;
+  }
 
-    const matchScore = matchHabilidades + (matchFormacao * 2); // formação pesa mais
+  return {
+    inicio,
+    fim,
+  };
+};
 
-    // Peso 2: Tempo no cargo atual (mais tempo = mais chance de trocar)
-    const tempoNoCargo = usuario.dataInicioCargoAtual
-      ? Date.now() - new Date(usuario.dataInicioCargoAtual).getTime()
-      : 0;
+  const CICLOS_PERMITIDOS = [
+  'Diário',
+  'Semanal',
+  'Quinzenal',
+  'Mensal',
+  'Anual',
+];
 
-    const diasNoCargo = Math.floor(tempoNoCargo / (1000 * 60 * 60 * 24));
+const agendarRodizio = async (
+  organizacaoId,
+  usuarioId,
+  dados
+) => {
+  validarObjectId(
+    organizacaoId,
+    'ID da organização'
+  );
 
-    return {
-      usuario,
-      score: matchScore,
-      tempoNoCargo: diasNoCargo,
-    };
+  validarObjectId(
+    dados.participante,
+    'ID do participante'
+  );
+
+  await validarAdminOuGestor(
+    organizacaoId,
+    usuarioId
+  );
+
+  const participante = await MembroOrganizacao.findOne({
+    _id: dados.participante,
+    organizacao: organizacaoId,
   });
 
-  // Ordenar por melhor score e mais tempo no cargo
-  const ordenados = sugestoes
-    .sort((a, b) => {
-      if (b.score === a.score) {
-        return b.tempoNoCargo - a.tempoNoCargo; // quem está há mais tempo
-      }
-      return b.score - a.score;
-    });
+  if (!participante) {
+    const erro = new Error(
+      'Participante não pertence a esta organização.'
+    );
 
-  return ordenados.map(s => ({
-    usuario: s.usuario.nome,
-    score: s.score,
-    diasNoCargo: s.tempoNoCargo,
-    id: s.usuario._id,
-  }));
-}
+    erro.status = 400;
+
+    throw erro;
+  }
+
+  // Função é obrigatória
+  if (!dados.funcao) {
+    const erro = new Error(
+      'A função é obrigatória para a rotação.'
+    );
+
+    erro.status = 400;
+
+    throw erro;
+  }
+
+  validarObjectId(
+    dados.funcao,
+    'ID da função'
+  );
+
+  const funcao = await Funcao.findOne({
+    _id: dados.funcao,
+    organizacao: organizacaoId,
+  });
+
+  if (!funcao) {
+    const erro = new Error(
+      'Função não pertence a esta organização.'
+    );
+
+    erro.status = 400;
+
+    throw erro;
+  }
+
+  // Validação do ciclo
+  const ciclo = dados.ciclo || 'Mensal';
+
+  if (!CICLOS_PERMITIDOS.includes(ciclo)) {
+    const erro = new Error(
+      'Ciclo inválido. Os valores permitidos são: Diário, Semanal, Quinzenal, Mensal ou Anual.'
+    );
+
+    erro.status = 400;
+
+    throw erro;
+  }
+
+  // Validação do período
+  const { inicio, fim } = validarPeriodo(
+    dados.dataInicio,
+    dados.dataFim
+  );
+
+  // Evita duas rotações simultâneas
+  const conflito = await Rodizio.findOne({
+    organizacao: organizacaoId,
+    participante: participante._id,
+    dataInicio: {
+      $lt: fim,
+    },
+    dataFim: {
+      $gt: inicio,
+    },
+  });
+
+  if (conflito) {
+    const erro = new Error(
+      'O participante já possui uma rotação neste período.'
+    );
+
+    erro.status = 409;
+
+    throw erro;
+  }
+
+  const rodizio = await Rodizio.create({
+    organizacao: organizacaoId,
+    participante: participante._id,
+    funcao: dados.funcao,
+    ciclo,
+    dataInicio: inicio,
+    dataFim: fim,
+  });
+
+  return buscarRodizioPorId(
+    rodizio._id,
+    organizacaoId,
+    usuarioId
+  );
+};
+
+const listarRodizios = async (
+  organizacaoId,
+  usuarioId
+) => {
+  await validarAdminOuGestor(
+    organizacaoId,
+    usuarioId
+  );
+
+  return Rodizio.find({
+    organizacao: organizacaoId,
+  })
+    .populate({
+      path: 'participante',
+      populate: {
+        path: 'usuario',
+        select: 'nome email',
+      },
+    })
+    .populate(
+      'funcao',
+      'nome descricao'
+    )
+    .sort({
+      dataInicio: 1,
+    });
+};
+
+const buscarRodizioPorId = async (
+  rodizioId,
+  organizacaoId,
+  usuarioId
+) => {
+  validarObjectId(
+    rodizioId,
+    'ID do rodízio'
+  );
+
+  await validarMembro(
+    organizacaoId,
+    usuarioId
+  );
+
+  const rodizio = await Rodizio.findOne({
+    _id: rodizioId,
+    organizacao: organizacaoId,
+  })
+    .populate({
+      path: 'participante',
+      populate: {
+        path: 'usuario',
+        select: 'nome email',
+      },
+    })
+    .populate(
+      'funcao',
+      'nome descricao'
+    );
+
+  if (!rodizio) {
+    const erro = new Error(
+      'Rodízio não encontrado nesta organização.'
+    );
+
+    erro.status = 404;
+
+    throw erro;
+  }
+
+  return rodizio;
+};
+
+const listarMinhaRotacaoAtual = async (
+  organizacaoId,
+  usuarioId
+) => {
+  const membro = await validarMembro(
+    organizacaoId,
+    usuarioId
+  );
+
+  const agora = new Date();
+
+  return Rodizio.find({
+    organizacao: organizacaoId,
+    participante: membro._id,
+
+    dataInicio: {
+      $lte: agora,
+    },
+
+    dataFim: {
+      $gte: agora,
+    },
+  })
+    .populate(
+      'funcao',
+      'nome descricao'
+    )
+    .sort({
+      dataInicio: 1,
+    });
+};
 
 module.exports = {
-  sugerirAlocacoes
+  agendarRodizio,
+  listarRodizios,
+  buscarRodizioPorId,
+  listarMinhaRotacaoAtual,
 };

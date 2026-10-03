@@ -1,136 +1,142 @@
-const Rodizio = require("../models/Rodizio");
-const Setor = require("../models/Setor");
-const Usuario = require("../models/Usuario")
-const { sugerirAlocacoes } = require("../services/rodizioService")
+const rodizioService = require('../services/rodizioService');
 
-const criarRodizio = async (req, res) => {
+const agendarRodizio = async (req, res) => {
   try {
-    const { nome, descricao, ciclo, setor, membros, necessidades, dataInicio, dataFim } = req.body;
+    const { id: organizacaoId } = req.params;
+    const usuarioId = req.user?.id;
 
-    
-     // 1. Verificar campos obrigatórios básicos
-    if (!nome || !ciclo || !setor || !dataInicio || !dataFim) {
-      return res.status(400).json({ mensagem: 'Campos obrigatórios faltando.' });
-    }
-
-    // 2. Validar membros - se for obrigatório
-    if (!membros || !Array.isArray(membros) || membros.length === 0) {
-      return res.status(400).json({ mensagem: 'Membros são obrigatórios e devem ser um array não vazio.' });
-    }
-
-    // 3. Validar que todos os usuários existem
-    const usuarioIds = membros.map(m => m.usuario);
-    const usuariosEncontrados = await Usuario.find({ _id: { $in: usuarioIds } });
-
-    if (usuariosEncontrados.length !== usuarioIds.length) {
-      return res.status(400).json({ mensagem: 'Um ou mais usuários não foram encontrados.' });
-    }
-
-    // 4. Validar necessidades - se for obrigatório
-    if (!necessidades || !Array.isArray(necessidades) || necessidades.length === 0) {
-      return res.status(400).json({ mensagem: 'Necessidades são obrigatórias e devem ser um array não vazio.' });
-    }
-
-    // 5. Validar campos de cada necessidade
-    for (const necessidade of necessidades) {
-      if (!necessidade.habilidade || !necessidade.formacao || !necessidade.quantidade) {
-        return res.status(400).json({ mensagem: 'Cada necessidade deve ter habilidade, formação e quantidade.' });
-      }
-    }
-
-    // Se chegou aqui, tá tudo certo pra criar
-    const novoRodizio = new Rodizio({
-      nome,
-      descricao,
+    const {
+      participante,
+      funcao,
       ciclo,
-      setor,
-      membros,
-      necessidades,
       dataInicio,
       dataFim,
+    } = req.body;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    if (!participante || !funcao || !dataInicio || !dataFim) {
+      return res.status(400).json({
+        mensagem:
+          'Participante, função, data de início e data de término são obrigatórios.',
+      });
+    }
+
+    const rodizio =
+      await rodizioService.agendarRodizio(
+        organizacaoId,
+        usuarioId,
+        {
+          participante,
+          funcao,
+          ciclo,
+          dataInicio,
+          dataFim,
+        }
+      );
+
+    return res.status(201).json({
+      mensagem: 'Rotação agendada com sucesso!',
+      rodizio,
     });
-
-    await novoRodizio.save();
-
-    res.status(201).json({ mensagem: 'Rodízio criado com sucesso!', rodizio: novoRodizio });
   } catch (error) {
-    res.status(500).json({ mensagem: 'Erro ao criar rodízio', erro: error.message });
+    return res.status(error.status || 500).json({
+      mensagem:
+        error.message ||
+        'Erro ao agendar rotação.',
+    });
   }
 };
 
 const listarRodizios = async (req, res) => {
   try {
-    const rodizios = await Rodizio.find()
-      .populate("setor", "nome descricao")
-      .populate("membros.usuario", "nome email");
+    const { id: organizacaoId } = req.params;
+    const usuarioId = req.user?.id;
 
-    res.status(200).json(rodizios);
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizios =
+      await rodizioService.listarRodizios(
+        organizacaoId,
+        usuarioId
+      );
+
+    return res.status(200).json(rodizios);
   } catch (error) {
-    console.error("Erro ao listar rodízios:", error);
-    res
-      .status(500)
-      .json({ mensagem: "Erro ao listar rodízios", erro: error.message });
-  }
-};
-
-const listarRodizioPorId = async (req, res) => {
-  try {
-    const rodizio = await Rodizio.findById(req.params.id)
-      .populate("setor", "nome descricao")
-      .populate("membros.usuario", "nome email");
-
-    res.status(200).json(rodizio);
-  } catch (error) {
-    res.status(500).json({ mensagem: "Erro ao buscar rodízio", erro: error.message });
-  }
-};
-
-const atualizarRodizio = async (req, res) => {
-  try {
-    const rodizio = await Rodizio.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    return res.status(error.status || 500).json({
+      mensagem:
+        error.message ||
+        'Erro ao listar rotações.',
     });
-    if (!rodizio) {
-      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
-    }
-    res.json(rodizio);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ mensagem: "Erro ao atualizar rodízio", erro: error.message });
   }
 };
 
-const deletarRodizio = async (req, res) => {
+const listarMinhaRotacaoAtual = async (req, res) => {
   try {
-    const rodizio = await Rodizio.findByIdAndDelete(req.params.id);
-    if (!rodizio) {
-      return res.status(404).json({ mensagem: "Rodízio não encontrado" });
+    const { id: organizacaoId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
     }
-    res.json({ mensagem: "Rodízio removido com sucesso" });
+
+    const rodizios =
+      await rodizioService.listarMinhaRotacaoAtual(
+        organizacaoId,
+        usuarioId
+      );
+
+    return res.status(200).json(rodizios);
   } catch (error) {
-    res
-      .status(500)
-      .json({ mensagem: "Erro ao deletar rodízio", erro: error.message });
+    return res.status(error.status || 500).json({
+      mensagem:
+        error.message ||
+        'Erro ao consultar rotação atual.',
+    });
   }
 };
 
-const sugerirAlocacoesRodizio = async (req, res) => {
+const buscarRodizioPorId = async (req, res) => {
   try {
-    const { id } = req.params;
-    const sugestoes = await sugerirAlocacoes(id);
-    res.status(200).json(sugestoes);
+    const { id: organizacaoId, rodizioId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio =
+      await rodizioService.buscarRodizioPorId(
+        rodizioId,
+        organizacaoId,
+        usuarioId
+      );
+
+    return res.status(200).json(rodizio);
   } catch (error) {
-    console.error("Erro ao sugerir alocações:", error);
-    res.status(500).json({ mensagem: "Erro ao sugerir alocações", erro: error.message });
+    return res.status(error.status || 500).json({
+      mensagem:
+        error.message ||
+        'Erro ao buscar rotação.',
+    });
   }
 };
 
 module.exports = {
-  criarRodizio,
+  agendarRodizio,
   listarRodizios,
-  listarRodizioPorId,
-  atualizarRodizio,
-  deletarRodizio,
-  sugerirAlocacoesRodizio,
+  listarMinhaRotacaoAtual,
+  buscarRodizioPorId,
 };

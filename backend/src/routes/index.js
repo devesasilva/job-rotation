@@ -60,3 +60,9 @@ module.exports = router;
  * /setores:
  *   $ref: './setorRoutes.js'
  */
+
+/**
+ * @swagger
+ * /organizacoes:
+ *   $ref: './organizacaoRoutes.js'
+ */
