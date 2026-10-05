@@ -6,7 +6,7 @@ const agendarRodizio = async (req, res) => {
     const usuarioId = req.user?.id;
 
     const {
-      participante,
+      membro,
       funcao,
       ciclo,
       dataInicio,
@@ -19,10 +19,10 @@ const agendarRodizio = async (req, res) => {
       });
     }
 
-    if (!participante || !funcao || !dataInicio || !dataFim) {
+    if (!membro || !funcao || !dataInicio || !dataFim) {
       return res.status(400).json({
         mensagem:
-          'Participante, função, data de início e data de término são obrigatórios.',
+          'Membro, função, data de início e data de término são obrigatórios.',
       });
     }
 
@@ -31,7 +31,7 @@ const agendarRodizio = async (req, res) => {
         organizacaoId,
         usuarioId,
         {
-          participante,
+          membro,
           funcao,
           ciclo,
           dataInicio,

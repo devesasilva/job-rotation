@@ -175,5 +175,7 @@ router.delete('/:id/membros/:membroId', organizacaoController.removerMembro);
  */
 router.post('/:id/funcoes', funcaoController.criar);
 router.get('/:id/funcoes', funcaoController.listar);
+router.put('/:id/funcoes/:funcaoId', funcaoController.editar);
+router.delete('/:id/funcoes/:funcaoId', funcaoController.excluir);
 router.use('/:id/rodizios', rodizioRoutes);
 module.exports = router;
