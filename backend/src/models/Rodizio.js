@@ -1,6 +1,21 @@
 
 const mongoose = require('mongoose');
 
+const atribuicaoSchema = new mongoose.Schema(
+  {
+    membro: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MembroOrganizacao',
+      default: null,
+    },
+    funcao: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Funcao',
+      default: null,
+    },
+  }
+);
+
 const rodizioSchema = new mongoose.Schema(
   {
     organizacao: {
@@ -23,6 +38,8 @@ const rodizioSchema = new mongoose.Schema(
         ref: 'Funcao',
       },
     ],
+
+    atribuicoes: [atribuicaoSchema],
 
     ciclo: {
       type: String,
