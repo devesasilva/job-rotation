@@ -1,3 +1,4 @@
+
 const express = require('express');
 
 const router = express.Router({
@@ -7,9 +8,10 @@ const router = express.Router({
 const rodizioController =
   require('../controllers/rodizioController');
 
+// Criar e listar rodízios.
 router.post(
   '/',
-  rodizioController.agendarRodizio
+  rodizioController.criarRodizio
 );
 
 router.get(
@@ -17,11 +19,35 @@ router.get(
   rodizioController.listarRodizios
 );
 
+// Consultar a rotação atual do usuário.
 router.get(
   '/minha',
   rodizioController.listarMinhaRotacaoAtual
 );
 
+// Gerenciar membros do rodízio.
+router.post(
+  '/:rodizioId/membros',
+  rodizioController.adicionarMembro
+);
+
+router.delete(
+  '/:rodizioId/membros/:membroId',
+  rodizioController.removerMembro
+);
+
+// Gerenciar funções do rodízio.
+router.post(
+  '/:rodizioId/funcoes',
+  rodizioController.adicionarFuncao
+);
+
+router.delete(
+  '/:rodizioId/funcoes/:funcaoId',
+  rodizioController.removerFuncao
+);
+
+// Consultar um rodízio específico.
 router.get(
   '/:rodizioId',
   rodizioController.buscarRodizioPorId
@@ -40,8 +66,10 @@ module.exports = router;
  * @swagger
  * /organizacoes/{id}/rodizios:
  *   post:
- *     summary: Agenda uma nova rotação
- *     description: Agenda uma rotação para um participante dentro de uma organização.
+ *     summary: Cria um rodízio
+ *    description: >
+ *     Cria um rodízio para a organização.
+ *     Os membros e as funções podem ser associados posteriormente.
  *     tags: [Rodízio]
  *     security:
  *       - bearerAuth: []
@@ -60,19 +88,9 @@ module.exports = router;
  *           schema:
  *             type: object
  *             required:
- *               - participante
- *               - funcao
  *               - dataInicio
  *               - dataFim
  *             properties:
- *               participante:
- *                 type: string
- *                 description: ID do membro da organização que participará da rotação
- *                 example: 68c223456789abcdef123456
- *               funcao:
- *                 type: string
- *                 description: ID da função que será exercida durante a rotação
- *                 example: 68c323456789abcdef123456
  *               ciclo:
  *                 type: string
  *                 description: Ciclo da rotação

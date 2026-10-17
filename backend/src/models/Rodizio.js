@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const rodizioSchema = new mongoose.Schema(
@@ -9,21 +10,29 @@ const rodizioSchema = new mongoose.Schema(
       index: true,
     },
 
-    membro: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'MembroOrganizacao',
-      required: true,
-      index: true,
-    },
+    membros: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'MembroOrganizacao',
+      },
+    ],
 
-    funcao: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Funcao',
-    },
+    funcoes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Funcao',
+      },
+    ],
 
     ciclo: {
       type: String,
-      enum: ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Anual'],
+      enum: [
+        'Diário',
+        'Semanal',
+        'Quinzenal',
+        'Mensal',
+        'Anual',
+      ],
       default: 'Mensal',
     },
 
@@ -45,7 +54,6 @@ const rodizioSchema = new mongoose.Schema(
 
 rodizioSchema.index({
   organizacao: 1,
-  participante: 1,
   dataInicio: 1,
   dataFim: 1,
 });
