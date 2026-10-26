@@ -51,9 +51,14 @@ const validarPeriodo = (dataInicio, dataFim) => {
   return { inicio, fim };
 };
 
-// Centraliza o carregamento dos dados relacionados.
-const popularRodizio = (consulta) => {
-  return consulta
+const obterIdReferencia = valor =>
+  valor?._id || valor || null;
+
+const popularRodizio = async (
+  consulta,
+  persistirAtribuicoesLegadas = false
+) => {
+  const resultado = await consulta
     .populate({
       path: 'membros',
       populate: {
@@ -61,7 +66,161 @@ const popularRodizio = (consulta) => {
         select: 'nome email',
       },
     })
-    .populate('funcoes', 'nome descricao');
+    .populate('funcoes', 'nome descricao')
+    .populate({
+      path: 'atribuicoes.membro',
+      populate: {
+        path: 'usuario',
+        select: 'nome email',
+      },
+    })
+    .populate('atribuicoes.funcao', 'nome descricao');
+
+  const serializarRodizio = async rodizio => {
+    if (
+      rodizio.atribuicoes.length === 0 &&
+      (rodizio.membros.length > 0 ||
+        rodizio.funcoes.length > 0)
+    ) {
+      if (persistirAtribuicoesLegadas) {
+        materializarAtribuicoesLegadas(rodizio);
+        await rodizio.save();
+        await rodizio.populate({
+          path: 'atribuicoes.membro',
+          populate: {
+            path: 'usuario',
+            select: 'nome email',
+          },
+        });
+        await rodizio.populate(
+          'atribuicoes.funcao',
+          'nome descricao'
+        );
+      } else {
+        const dados = rodizio.toObject();
+        dados.atribuicoes = [
+          ...dados.membros.map((membro, indice) => ({
+            _id: `${rodizio._id}-membro-${indice}`,
+            membro,
+            funcao: null,
+          })),
+          ...dados.funcoes.map((funcao, indice) => ({
+            _id: `${rodizio._id}-funcao-${indice}`,
+            membro: null,
+            funcao,
+          })),
+        ];
+
+        return dados;
+      }
+    }
+
+    return rodizio.toObject();
+  };
+
+  return Array.isArray(resultado)
+    ? Promise.all(resultado.map(serializarRodizio))
+    : resultado && serializarRodizio(resultado);
+};
+
+const materializarAtribuicoesLegadas = rodizio => {
+  if (rodizio.atribuicoes.length > 0) {
+    return;
+  }
+
+  rodizio.atribuicoes = [
+    ...rodizio.membros.map(membro => ({
+      membro: obterIdReferencia(membro),
+      funcao: null,
+    })),
+    ...rodizio.funcoes.map(funcao => ({
+      membro: null,
+      funcao: obterIdReferencia(funcao),
+    })),
+  ];
+};
+
+const sincronizarAssociacoesLegadas = rodizio => {
+  const membros = new Map();
+  const funcoes = new Map();
+
+  rodizio.atribuicoes.forEach(atribuicao => {
+    const membroId = obterIdReferencia(
+      atribuicao.membro
+    );
+    const funcaoId = obterIdReferencia(
+      atribuicao.funcao
+    );
+
+    if (membroId) {
+      membros.set(
+        membroId.toString(),
+        membroId
+      );
+    }
+
+    if (funcaoId) {
+      funcoes.set(
+        funcaoId.toString(),
+        funcaoId
+      );
+    }
+  });
+
+  rodizio.membros = [...membros.values()];
+  rodizio.funcoes = [...funcoes.values()];
+};
+
+const buscarMembroDaOrganizacao = async (
+  membroId,
+  organizacaoId
+) => {
+  if (!membroId) {
+    return null;
+  }
+
+  validarObjectId(membroId, 'ID do membro');
+
+  const membro = await MembroOrganizacao.findOne({
+    _id: membroId,
+    organizacao: organizacaoId,
+  });
+
+  if (!membro) {
+    const erro = new Error(
+      'Membro não pertence a esta organização.'
+    );
+    erro.status = 404;
+    throw erro;
+  }
+
+  return membro;
+};
+
+const buscarFuncaoDaOrganizacao = async (
+  funcaoId,
+  organizacaoId
+) => {
+  if (!funcaoId) {
+    return null;
+  }
+
+  validarObjectId(funcaoId, 'ID da função');
+
+  const funcao = await Funcao.findOne({
+    _id: funcaoId,
+    organizacao: organizacaoId,
+  });
+
+  if (!funcao) {
+    const erro = new Error(
+      'Função não pertence a esta organização.'
+    );
+    erro.status = 404;
+    throw erro;
+  }
+
+  return funcao;
 };
 
 // Cria um rodízio sem exigir membros ou funções.
@@ -99,6 +258,7 @@ const criarRodizio = async (
     organizacao: organizacaoId,
     membros: [],
     funcoes: [],
+    atribuicoes: [],
     ciclo,
     dataInicio: inicio,
     dataFim: fim,
@@ -111,6 +271,89 @@ const criarRodizio = async (
   );
 };
 
+const atualizarRodizio = async (
+  organizacaoId,
+  rodizioId,
+  dados,
+  usuarioId
+) => {
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  if (
+    !Object.prototype.hasOwnProperty.call(dados, 'ciclo') &&
+    !Object.prototype.hasOwnProperty.call(
+      dados,
+      'dataInicio'
+    ) &&
+    !Object.prototype.hasOwnProperty.call(dados, 'dataFim')
+  ) {
+    const erro = new Error(
+      'Informe o ciclo ou o período a atualizar.'
+    );
+    erro.status = 400;
+    throw erro;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(dados, 'ciclo')
+  ) {
+    if (!CICLOS_PERMITIDOS.includes(dados.ciclo)) {
+      const erro = new Error(
+        'Ciclo inválido. Os valores permitidos são: Diário, Semanal, Quinzenal, Mensal ou Anual.'
+      );
+      erro.status = 400;
+      throw erro;
+    }
+
+    rodizio.ciclo = dados.ciclo;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      dados,
+      'dataInicio'
+    ) ||
+    Object.prototype.hasOwnProperty.call(
+      dados,
+      'dataFim'
+    )
+  ) {
+    const { inicio, fim } = validarPeriodo(
+      dados.dataInicio || rodizio.dataInicio,
+      dados.dataFim || rodizio.dataFim
+    );
+    rodizio.dataInicio = inicio;
+    rodizio.dataFim = fim;
+  }
+
+  await rodizio.save();
+
+  return popularRodizio(
+    Rodizio.findOne({
+      _id: rodizio._id,
+      organizacao: organizacaoId,
+    })
+  );
+};
+
+const excluirRodizio = async (
+  organizacaoId,
+  rodizioId,
+  usuarioId
+) => {
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  await rodizio.deleteOne();
+};
+
 // Lista todos os rodízios da organização.
 const listarRodizios = async (
   organizacaoId,
@@ -121,7 +364,7 @@ const listarRodizios = async (
     'ID da organização'
   );
 
-  await validarAdminOuModerador(
+  await validarMembro(
     organizacaoId,
     usuarioId
   );
@@ -160,7 +403,8 @@ const buscarRodizioPorId = async (
     Rodizio.findOne({
       _id: rodizioId,
       organizacao: organizacaoId,
-    })
+    }),
+    true
   );
 
   if (!rodizio) {
@@ -194,7 +438,10 @@ const listarMinhaRotacaoAtual = async (
   return popularRodizio(
     Rodizio.find({
       organizacao: organizacaoId,
-      membros: membro._id,
+      $or: [
+        { 'atribuicoes.membro': membro._id },
+        { membros: membro._id },
+      ],
       dataInicio: { $lte: agora },
       dataFim: { $gte: agora },
     }).sort({
@@ -247,24 +494,19 @@ const adicionarMembro = async (
     usuarioId
   );
 
-  const membro = await MembroOrganizacao.findOne({
-    _id: membroId,
-    organizacao: organizacaoId,
-  });
+  materializarAtribuicoesLegadas(rodizio);
 
-  if (!membro) {
-    const erro = new Error(
-      'Membro não pertence a esta organização.'
-    );
-    erro.status = 404;
-    throw erro;
-  }
-
-  const jaExiste = rodizio.membros.some(
-    id => id.equals(membro._id)
+  const membro = await buscarMembroDaOrganizacao(
+    membroId,
+    organizacaoId
   );
 
-  if (jaExiste) {
+  if (
+    rodizio.atribuicoes.some(
+      atribuicao =>
+        atribuicao.membro?.equals(membro._id)
+    )
+  ) {
     const erro = new Error(
       'Membro já está associado a este rodízio.'
     );
@@ -272,7 +514,11 @@ const adicionarMembro = async (
     throw erro;
   }
 
-  rodizio.membros.push(membro._id);
+  rodizio.atribuicoes.push({
+    membro: membro._id,
+    funcao: null,
+  });
+  sincronizarAssociacoesLegadas(rodizio);
   await rodizio.save();
 
   return popularRodizio(
@@ -294,11 +540,13 @@ const removerMembro = async (
     usuarioId
   );
 
-  const indice = rodizio.membros.findIndex(
-    id => id.equals(membroId)
+  materializarAtribuicoesLegadas(rodizio);
+
+  const atribuicoesMembro = rodizio.atribuicoes.filter(
+    atribuicao => atribuicao.membro?.equals(membroId)
   );
 
-  if (indice === -1) {
+  if (atribuicoesMembro.length === 0) {
     const erro = new Error(
       'Membro não está associado a este rodízio.'
     );
@@ -306,7 +554,17 @@ const removerMembro = async (
     throw erro;
   }
 
-  rodizio.membros.splice(indice, 1);
+  rodizio.atribuicoes = rodizio.atribuicoes.filter(
+    atribuicao => {
+      if (!atribuicao.membro?.equals(membroId)) {
+        return true;
+      }
+
+      atribuicao.membro = null;
+      return Boolean(atribuicao.funcao);
+    }
+  );
+  sincronizarAssociacoesLegadas(rodizio);
   await rodizio.save();
 
   return popularRodizio(
@@ -328,24 +586,19 @@ const adicionarFuncao = async (
     usuarioId
   );
 
-  const funcao = await Funcao.findOne({
-    _id: funcaoId,
-    organizacao: organizacaoId,
-  });
+  materializarAtribuicoesLegadas(rodizio);
 
-  if (!funcao) {
-    const erro = new Error(
-      'Função não pertence a esta organização.'
-    );
-    erro.status = 404;
-    throw erro;
-  }
-
-  const jaExiste = rodizio.funcoes.some(
-    id => id.equals(funcao._id)
+  const funcao = await buscarFuncaoDaOrganizacao(
+    funcaoId,
+    organizacaoId
   );
 
-  if (jaExiste) {
+  if (
+    rodizio.atribuicoes.some(
+      atribuicao =>
+        atribuicao.funcao?.equals(funcao._id)
+    )
+  ) {
     const erro = new Error(
       'Função já está associada a este rodízio.'
     );
@@ -353,7 +606,11 @@ const adicionarFuncao = async (
     throw erro;
   }
 
-  rodizio.funcoes.push(funcao._id);
+  rodizio.atribuicoes.push({
+    membro: null,
+    funcao: funcao._id,
+  });
+  sincronizarAssociacoesLegadas(rodizio);
   await rodizio.save();
 
   return popularRodizio(
@@ -375,11 +632,13 @@ const removerFuncao = async (
     usuarioId
   );
 
-  const indice = rodizio.funcoes.findIndex(
-    id => id.equals(funcaoId)
+  materializarAtribuicoesLegadas(rodizio);
+
+  const atribuicoesFuncao = rodizio.atribuicoes.filter(
+    atribuicao => atribuicao.funcao?.equals(funcaoId)
   );
 
-  if (indice === -1) {
+  if (atribuicoesFuncao.length === 0) {
     const erro = new Error(
       'Função não está associada a este rodízio.'
     );
@@ -387,8 +646,231 @@ const removerFuncao = async (
     throw erro;
   }
 
-  rodizio.funcoes.splice(indice, 1);
+  rodizio.atribuicoes = rodizio.atribuicoes.filter(
+    atribuicao => {
+      if (!atribuicao.funcao?.equals(funcaoId)) {
+        return true;
+      }
+
+      atribuicao.funcao = null;
+      return Boolean(atribuicao.membro);
+    }
+  );
+  sincronizarAssociacoesLegadas(rodizio);
   await rodizio.save();
+
+  return popularRodizio(
+    Rodizio.findById(rodizio._id)
+  );
+};
+
+const adicionarAtribuicao = async (
+  organizacaoId,
+  rodizioId,
+  dados,
+  usuarioId
+) => {
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  materializarAtribuicoesLegadas(rodizio);
+
+  const membro = await buscarMembroDaOrganizacao(
+    dados.membroId,
+    organizacaoId
+  );
+  const funcao = await buscarFuncaoDaOrganizacao(
+    dados.funcaoId,
+    organizacaoId
+  );
+
+  rodizio.atribuicoes.push({
+    membro: membro?._id || null,
+    funcao: funcao?._id || null,
+  });
+  sincronizarAssociacoesLegadas(rodizio);
+  await rodizio.save();
+
+  return popularRodizio(
+    Rodizio.findById(rodizio._id)
+  );
+};
+
+const atualizarAtribuicao = async (
+  organizacaoId,
+  rodizioId,
+  atribuicaoId,
+  dados,
+  usuarioId
+) => {
+  validarObjectId(atribuicaoId, 'ID da atribuição');
+
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      dados,
+      'membroId'
+    ) &&
+    !Object.prototype.hasOwnProperty.call(
+      dados,
+      'funcaoId'
+    )
+  ) {
+    const erro = new Error(
+      'Informe o membro ou a função a atualizar.'
+    );
+    erro.status = 400;
+    throw erro;
+  }
+
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  materializarAtribuicoesLegadas(rodizio);
+
+  const atribuicao = rodizio.atribuicoes.id(
+    atribuicaoId
+  );
+
+  if (!atribuicao) {
+    const erro = new Error(
+      'Linha não encontrada neste rodízio.'
+    );
+    erro.status = 404;
+    throw erro;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      dados,
+      'membroId'
+    )
+  ) {
+    const membro = await buscarMembroDaOrganizacao(
+      dados.membroId,
+      organizacaoId
+    );
+    atribuicao.membro = membro?._id || null;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      dados,
+      'funcaoId'
+    )
+  ) {
+    const funcao = await buscarFuncaoDaOrganizacao(
+      dados.funcaoId,
+      organizacaoId
+    );
+    atribuicao.funcao = funcao?._id || null;
+  }
+
+  sincronizarAssociacoesLegadas(rodizio);
+  await rodizio.save();
+
+  return popularRodizio(
+    Rodizio.findById(rodizio._id)
+  );
+};
+
+const removerAtribuicao = async (
+  organizacaoId,
+  rodizioId,
+  atribuicaoId,
+  usuarioId
+) => {
+  validarObjectId(atribuicaoId, 'ID da atribuição');
+
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  materializarAtribuicoesLegadas(rodizio);
+
+  const indice = rodizio.atribuicoes.findIndex(
+    atribuicao => atribuicao._id.equals(atribuicaoId)
+  );
+
+  if (indice === -1) {
+    const erro = new Error(
+      'Linha não encontrada neste rodízio.'
+    );
+    erro.status = 404;
+    throw erro;
+  }
+
+  rodizio.atribuicoes.splice(indice, 1);
+  sincronizarAssociacoesLegadas(rodizio);
+  await rodizio.save();
+
+  return popularRodizio(
+    Rodizio.findById(rodizio._id)
+  );
+};
+
+const rotacionarRodizio = async (
+  organizacaoId,
+  rodizioId,
+  usuarioId
+) => {
+  const rodizio = await obterRodizioParaAlteracao(
+    organizacaoId,
+    rodizioId,
+    usuarioId
+  );
+
+  const possuiAtribuicoes = rodizio.atribuicoes.length > 0;
+  materializarAtribuicoesLegadas(rodizio);
+
+  if (rodizio.atribuicoes.length < 2) {
+    const erro = new Error(
+      'Adicione pelo menos duas linhas ao rodízio antes de rotacioná-lo.'
+    );
+    erro.status = 400;
+    throw erro;
+  }
+
+  if (!possuiAtribuicoes) {
+    await rodizio.save();
+  }
+
+  const membros = rodizio.atribuicoes.map(atribuicao =>
+    obterIdReferencia(atribuicao.membro)
+  );
+  const atualizacoes = {};
+
+  rodizio.atribuicoes.forEach((_, indice) => {
+    atualizacoes[`atribuicoes.${indice}.membro`] =
+      membros[
+        (indice - 1 + membros.length) % membros.length
+      ];
+  });
+
+  const resultado = await Rodizio.updateOne(
+    {
+      _id: rodizio._id,
+      organizacao: organizacaoId,
+    },
+    {
+      $set: atualizacoes,
+    }
+  );
+
+  if (!resultado.matchedCount) {
+    const erro = new Error(
+      'Rodízio não encontrado nesta organização.'
+    );
+    erro.status = 404;
+    throw erro;
+  }
 
   return popularRodizio(
     Rodizio.findById(rodizio._id)
@@ -397,6 +879,8 @@ const removerFuncao = async (
 
 module.exports = {
   criarRodizio,
+  atualizarRodizio,
+  excluirRodizio,
   listarRodizios,
   buscarRodizioPorId,
   listarMinhaRotacaoAtual,
@@ -404,4 +888,8 @@ module.exports = {
   removerMembro,
   adicionarFuncao,
   removerFuncao,
+  adicionarAtribuicao,
+  atualizarAtribuicao,
+  removerAtribuicao,
+  rotacionarRodizio,
 };

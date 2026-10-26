@@ -67,14 +67,35 @@ export default function Organizacao() {
 
   const [modalAgendarRodizioAberto, setModalAgendarRodizioAberto] =
     useState(false);
-  const [membroRodizio, setmembroRodizio] =
-    useState("");
-  const [funcaoRodizio, setFuncaoRodizio] = useState("");
   const [cicloRodizio, setCicloRodizio] = useState("Mensal");
   const [dataInicioRodizio, setDataInicioRodizio] = useState("");
   const [dataFimRodizio, setDataFimRodizio] = useState("");
   const [agendandoRodizio, setAgendandoRodizio] =
     useState(false);
+  const [alterandoAtribuicoes, setAlterandoAtribuicoes] =
+    useState(false);
+  const [errorAtribuicoes, setErrorAtribuicoes] =
+    useState("");
+  const [cicloEditado, setCicloEditado] = useState("Mensal");
+  const [dataInicioEditada, setDataInicioEditada] =
+    useState("");
+  const [dataFimEditada, setDataFimEditada] = useState("");
+  const [salvandoDetalhesRodizio, setSalvandoDetalhesRodizio] =
+    useState(false);
+  const [errorDetalhesRodizio, setErrorDetalhesRodizio] =
+    useState("");
+  const [rodizioParaRotacionar, setRodizioParaRotacionar] =
+    useState(null);
+  const [rotacionandoRodizioId, setRotacionandoRodizioId] =
+    useState(null);
+  const [errorRotacionarRodizio, setErrorRotacionarRodizio] =
+    useState("");
+  const [rodizioParaExcluir, setRodizioParaExcluir] =
+    useState(null);
+  const [excluindoRodizioId, setExcluindoRodizioId] =
+    useState(null);
+  const [errorExcluirRodizio, setErrorExcluirRodizio] =
+    useState("");
 
   useEffect(() => {
     carregarOrganizacao();
@@ -348,6 +369,7 @@ export default function Organizacao() {
 
     setLoadingRodizioDetalhe(true);
     setErrorRodizios("");
+    setErrorAtribuicoes("");
 
     try {
       const response = await axios.get(
@@ -356,6 +378,14 @@ export default function Organizacao() {
       );
 
       setRodizioSelecionado(response.data);
+      setCicloEditado(response.data.ciclo || "Mensal");
+      setDataInicioEditada(
+        converterParaDataHoraLocal(response.data.dataInicio)
+      );
+      setDataFimEditada(
+        converterParaDataHoraLocal(response.data.dataFim)
+      );
+      setErrorDetalhesRodizio("");
     } catch (error) {
       console.error(
         "Erro ao buscar rodízio:",
@@ -374,6 +404,254 @@ export default function Organizacao() {
       );
     } finally {
       setLoadingRodizioDetalhe(false);
+    }
+  };
+
+  const salvarAtribuicoes = async (
+    rodizioId,
+    metodo,
+    caminho = "",
+    dados
+  ) => {
+    if (alterandoAtribuicoes) {
+      return;
+    }
+
+    setAlterandoAtribuicoes(true);
+    setErrorAtribuicoes("");
+
+    try {
+      const response = await axios({
+        method: metodo,
+        url: `${API}/organizacoes/${id}/rodizios/${rodizioId}/atribuicoes${caminho}`,
+        data: dados,
+        ...getConfig(),
+      });
+      const rodizioAtualizado = response.data.rodizio;
+
+      setRodizioSelecionado(rodizioAtualizado);
+      setRodizios((atuais) =>
+        atuais.map((rodizio) =>
+          rodizio._id === rodizioAtualizado._id
+            ? rodizioAtualizado
+            : rodizio
+        )
+      );
+      await carregarMinhaRotacaoAtual();
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar a tabela do rodízio:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorAtribuicoes(
+        error.response?.data?.mensagem ||
+          "Não foi possível atualizar a tabela do rodízio."
+      );
+    } finally {
+      setAlterandoAtribuicoes(false);
+    }
+  };
+
+  const adicionarLinhaAtribuicao = () => {
+    salvarAtribuicoes(
+      rodizioSelecionado._id,
+      "post",
+      "",
+      {}
+    );
+  };
+
+  const atualizarCelulaAtribuicao = (
+    atribuicaoId,
+    campo,
+    valor
+  ) => {
+    salvarAtribuicoes(
+      rodizioSelecionado._id,
+      "patch",
+      `/${atribuicaoId}`,
+      { [campo]: valor || null }
+    );
+  };
+
+  const removerLinhaAtribuicao = (atribuicaoId) => {
+    salvarAtribuicoes(
+      rodizioSelecionado._id,
+      "delete",
+      `/${atribuicaoId}`
+    );
+  };
+
+  const salvarDetalhesRodizio = async (e) => {
+    e.preventDefault();
+
+    if (!dataInicioEditada || !dataFimEditada) {
+      setErrorDetalhesRodizio(
+        "Informe as datas de início e término."
+      );
+      return;
+    }
+
+    const inicio = new Date(dataInicioEditada);
+    const fim = new Date(dataFimEditada);
+
+    if (
+      Number.isNaN(inicio.getTime()) ||
+      Number.isNaN(fim.getTime()) ||
+      inicio >= fim
+    ) {
+      setErrorDetalhesRodizio(
+        "A data de início deve ser anterior à data de término."
+      );
+      return;
+    }
+
+    setSalvandoDetalhesRodizio(true);
+    setErrorDetalhesRodizio("");
+
+    try {
+      const response = await axios.patch(
+        `${API}/organizacoes/${id}/rodizios/${rodizioSelecionado._id}`,
+        {
+          ciclo: cicloEditado,
+          dataInicio: inicio.toISOString(),
+          dataFim: fim.toISOString(),
+        },
+        getConfig()
+      );
+      const rodizioAtualizado = response.data.rodizio;
+
+      setRodizioSelecionado(rodizioAtualizado);
+      setRodizios((atuais) =>
+        atuais.map((rodizio) =>
+          rodizio._id === rodizioAtualizado._id
+            ? rodizioAtualizado
+            : rodizio
+        )
+      );
+      setRodizioSelecionado(null);
+      setErrorAtribuicoes("");
+      setErrorDetalhesRodizio("");
+      await carregarMinhaRotacaoAtual();
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar os dados do rodízio:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorDetalhesRodizio(
+        error.response?.data?.mensagem ||
+          error.message ||
+          "Não foi possível atualizar os dados do rodízio."
+      );
+    } finally {
+      setSalvandoDetalhesRodizio(false);
+    }
+  };
+
+  const confirmarRotacaoManual = async () => {
+    if (!rodizioParaRotacionar || rotacionandoRodizioId) {
+      return;
+    }
+
+    const { _id: rodizioId } = rodizioParaRotacionar;
+    setRotacionandoRodizioId(rodizioId);
+    setErrorRotacionarRodizio("");
+
+    try {
+      const response = await axios.post(
+        `${API}/organizacoes/${id}/rodizios/${rodizioId}/rotacionar`,
+        {},
+        getConfig()
+      );
+      const rodizioAtualizado = response.data.rodizio;
+
+      setRodizios((atuais) =>
+        atuais.map((rodizio) =>
+          rodizio._id === rodizioAtualizado._id
+            ? rodizioAtualizado
+            : rodizio
+        )
+      );
+      setRodizioSelecionado((atual) =>
+        atual?._id === rodizioAtualizado._id
+          ? rodizioAtualizado
+          : atual
+      );
+      setRodizioParaRotacionar(null);
+      await carregarMinhaRotacaoAtual();
+    } catch (error) {
+      console.error(
+        "Erro ao rotacionar rodízio:",
+        error
+      );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorRotacionarRodizio(
+        error.response?.data?.mensagem ||
+          "Não foi possível rotacionar o rodízio."
+      );
+    } finally {
+      setRotacionandoRodizioId(null);
+    }
+  };
+
+  const confirmarExclusaoRodizio = async () => {
+    if (!rodizioParaExcluir || excluindoRodizioId) {
+      return;
+    }
+
+    const { _id: rodizioId } = rodizioParaExcluir;
+    setExcluindoRodizioId(rodizioId);
+    setErrorExcluirRodizio("");
+
+    try {
+      await axios.delete(
+        `${API}/organizacoes/${id}/rodizios/${rodizioId}`,
+        getConfig()
+      );
+
+      setRodizios((atuais) =>
+        atuais.filter((rodizio) => rodizio._id !== rodizioId)
+      );
+      setRodizioSelecionado((atual) =>
+        atual?._id === rodizioId ? null : atual
+      );
+      setRodizioParaExcluir(null);
+      await carregarMinhaRotacaoAtual();
+    } catch (error) {
+      console.error("Erro ao excluir rodízio:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      setErrorExcluirRodizio(
+        error.response?.data?.mensagem ||
+          "Não foi possível excluir o rodízio."
+      );
+    } finally {
+      setExcluindoRodizioId(null);
     }
   };
 
@@ -398,22 +676,82 @@ export default function Organizacao() {
     );
   };
 
+  const converterParaDataHoraLocal = (data) => {
+    if (!data) {
+      return "";
+    }
+
+    const dataFormatada = new Date(data);
+
+    if (Number.isNaN(dataFormatada.getTime())) {
+      return "";
+    }
+
+    const dataLocal = new Date(
+      dataFormatada.getTime() -
+        dataFormatada.getTimezoneOffset() * 60000
+    );
+
+    return dataLocal.toISOString().slice(0, 16);
+  };
+
+  const obterMinhasFuncoes = () => {
+    const obterId = (valor) =>
+      String(valor?._id || valor?.id || valor || "");
+    const usuarioId = obterId(usuario);
+    const meusMembrosIds = new Set(
+      membros
+        .filter(
+          (membro) => obterId(membro.usuario) === usuarioId
+        )
+        .map((membro) => obterId(membro))
+    );
+    const minhasFuncoesAtuais = minhaRotacaoAtual.flatMap((rodizio) =>
+      (rodizio.atribuicoes || [])
+        .filter(
+          (atribuicao) => {
+            const membroId = obterId(atribuicao.membro);
+            const usuarioDoMembroId = obterId(
+              atribuicao.membro?.usuario
+            );
+
+            return (
+              meusMembrosIds.has(membroId) ||
+              (usuarioId && usuarioDoMembroId === usuarioId)
+            );
+          }
+        )
+        .map((atribuicao) => {
+          const funcaoId = obterId(atribuicao.funcao);
+          return (
+            atribuicao.funcao?.nome ||
+            funcoes.find(
+              (funcao) => obterId(funcao) === funcaoId
+            )?.nome
+          );
+        })
+        .filter(Boolean)
+    );
+
+    return [...new Set(minhasFuncoesAtuais)].join(", ") || "não definida";
+  };
+
+  const usuarioPodeGerenciarRodizios = membros.some((membro) => {
+    const usuarioId = usuario?._id || usuario?.id;
+    const usuarioDoMembroId =
+      membro.usuario?._id || membro.usuario?.id || membro.usuario;
+
+    return (
+      String(usuarioDoMembroId || "") === String(usuarioId || "") &&
+      ["Administrador", "Moderador"].includes(membro.perfil)
+    );
+  });
+
   const formatarPeriodo = (inicio, fim) => {
     return `${formatarData(inicio)} → ${formatarData(fim)}`;
   };
 
-  const obterNomemembro = (rodizio) => {
-    return (
-      rodizio?.membro?.usuario?.nome ||
-      rodizio?.membro?.nome ||
-      rodizio?.membro?.usuario?.email ||
-      "membro"
-    );
-  };
-
   const abrirModalAgendarRodizio = () => {
-    setmembroRodizio("");
-    setFuncaoRodizio("");
     setCicloRodizio("Mensal");
     setDataInicioRodizio("");
     setDataFimRodizio("");
@@ -427,8 +765,6 @@ export default function Organizacao() {
     }
 
     setModalAgendarRodizioAberto(false);
-    setmembroRodizio("");
-    setFuncaoRodizio("");
     setCicloRodizio("Mensal");
     setDataInicioRodizio("");
     setDataFimRodizio("");
@@ -436,20 +772,6 @@ export default function Organizacao() {
 
   const handleAgendarRodizio = async (e) => {
     e.preventDefault();
-
-    if (!membroRodizio) {
-      setErrorRodizios(
-        "Selecione o membro."
-      );
-      return;
-    }
-
-    if (!funcaoRodizio) {
-      setErrorRodizios(
-        "Selecione a função."
-      );
-      return;
-    }
 
     if (!dataInicioRodizio) {
       setErrorRodizios(
@@ -482,8 +804,6 @@ export default function Organizacao() {
       await axios.post(
         `${API}/organizacoes/${id}/rodizios`,
         {
-          membro: membroRodizio,
-          funcao: funcaoRodizio,
           ciclo: cicloRodizio,
           dataInicio: inicio.toISOString(),
           dataFim: fim.toISOString(),
@@ -491,7 +811,10 @@ export default function Organizacao() {
         getConfig()
       );
 
-      fecharModalAgendarRodizio();
+      setModalAgendarRodizioAberto(false);
+      setCicloRodizio("Mensal");
+      setDataInicioRodizio("");
+      setDataFimRodizio("");
 
       await carregarRodizios();
       await carregarMinhaRotacaoAtual();
@@ -504,13 +827,6 @@ export default function Organizacao() {
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
-        return;
-      }
-
-      if (error.response?.status === 409) {
-        setErrorRodizios(
-          "O membro já possui uma rotação neste período."
-        );
         return;
       }
 
@@ -1326,96 +1642,40 @@ export default function Organizacao() {
                     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]">
-                          Rodízios
+                          Olá, {usuario?.nome || "você"}!
                         </h2>
 
                         <p className="mt-2 text-sm text-[#686864]">
-                          Organize os períodos em que cada membro exercerá uma função.
+                          Sua função atual é{" "}
+                          {loadingMinhaRotacao ? (
+                            <span>consultando...</span>
+                          ) : errorMinhaRotacao ? (
+                            <span className="font-medium text-[#b9362d]">
+                              indisponível
+                            </span>
+                          ) : (
+                            <strong className="font-bold text-[#111111]">
+                              {obterMinhasFuncoes()}
+                            </strong>
+                          )}
+                          .
                         </p>
+
+                        {errorMinhaRotacao && (
+                          <p className="mt-1 text-sm text-[#b9362d]">
+                            {errorMinhaRotacao}
+                          </p>
+                        )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={abrirModalAgendarRodizio}
-                        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
-                      >
-                        + Agendar rodízio
-                      </button>
-                    </div>
-
-                    <div className="mb-8 rounded-[18px] border-2 border-[#111111] bg-[#f8f7f4] p-6 sm:p-7">
-                      <div className="mb-5 flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
-
-                        <h3 className="font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold tracking-[-0.03em]">
-                          Minha rotação atual
-                        </h3>
-                      </div>
-
-                      {loadingMinhaRotacao ? (
-                        <p className="text-sm font-semibold text-[#686864]">
-                          Consultando sua rotação...
-                        </p>
-                      ) : errorMinhaRotacao ? (
-                        <p className="text-sm font-medium text-[#b9362d]">
-                          {errorMinhaRotacao}
-                        </p>
-                      ) : minhaRotacaoAtual.length === 0 ? (
-                        <p className="text-sm leading-relaxed text-[#686864]">
-                          Você não possui uma rotação ativa neste momento.
-                        </p>
-                      ) : (
-                        <div className="grid gap-4">
-                          {minhaRotacaoAtual.map((rodizio) => (
-                            <div
-                              key={rodizio._id}
-                              className="rounded-[14px] border-2 border-[#111111] bg-white p-5"
-                            >
-                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                                    Função atual
-                                  </p>
-
-                                  <p className="mt-1 font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold">
-                                    {rodizio.funcao?.nome ||
-                                      "Função não informada"}
-                                  </p>
-                                </div>
-
-                                <span className="inline-flex w-fit rounded-full border border-[#111111] bg-[#b7dc58] px-3 py-1 text-xs font-bold">
-                                  {rodizio.ciclo || "Mensal"}
-                                </span>
-                              </div>
-
-                              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                                    Início
-                                  </p>
-
-                                  <p className="mt-1 text-sm font-semibold">
-                                    {formatarData(
-                                      rodizio.dataInicio
-                                    )}
-                                  </p>
-                                </div>
-
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                                    Término
-                                  </p>
-
-                                  <p className="mt-1 text-sm font-semibold">
-                                    {formatarData(
-                                      rodizio.dataFim
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                      {usuarioPodeGerenciarRodizios && (
+                        <button
+                          type="button"
+                          onClick={abrirModalAgendarRodizio}
+                          className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                        >
+                          + Criar rodízio
+                        </button>
                       )}
                     </div>
 
@@ -1445,96 +1705,135 @@ export default function Organizacao() {
                           Ainda não há rotações cadastradas nesta organização.
                         </p>
 
-                        <button
-                          type="button"
-                          onClick={abrirModalAgendarRodizio}
-                          className="mt-6 min-h-11 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
-                        >
-                          + Agendar rodízio
-                        </button>
+                        {usuarioPodeGerenciarRodizios && (
+                          <button
+                            type="button"
+                            onClick={abrirModalAgendarRodizio}
+                            className="mt-6 min-h-11 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
+                          >
+                            + Criar rodízio
+                          </button>
+                        )}
                       </div>
                     ) : (
-                      <div className="overflow-hidden rounded-[18px] border-2 border-[#111111]">
-                        <div className="hidden grid-cols-[1fr_1fr_1fr_180px] border-b-2 border-[#111111] bg-[#f8f7f4] px-5 py-4 text-xs font-bold uppercase tracking-[0.08em] lg:grid">
-                          <span>membro</span>
-                          <span>Função</span>
-                          <span>Período</span>
-                          <span>Ações</span>
-                        </div>
-
+                      <div className="grid gap-5">
                         {rodizios.map((rodizio) => (
-                          <div
+                          <article
                             key={rodizio._id}
-                            className="grid gap-5 border-b border-[#deded9] px-5 py-5 last:border-b-0 lg:grid-cols-[1fr_1fr_1fr_180px] lg:items-center"
+                            className="overflow-hidden rounded-[18px] border-2 border-[#111111]"
                           >
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
-                                membro
-                              </p>
-
-                              <p className="mt-1 font-bold lg:mt-0">
-                                {obterNomemembro(
-                                  rodizio
-                                )}
-                              </p>
-
-                              {rodizio.membro?.usuario
-                                ?.email && (
-                                <p className="mt-1 text-sm text-[#686864]">
-                                  {
-                                    rodizio.membro
-                                      .usuario.email
-                                  }
+                            <div className="flex flex-col gap-4 bg-[#f8f7f4] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                                  {rodizio.ciclo || "Mensal"} ·{" "}
+                                  {formatarPeriodo(
+                                    rodizio.dataInicio,
+                                    rodizio.dataFim
+                                  )}
                                 </p>
+                              </div>
+
+                              {usuarioPodeGerenciarRodizios && (
+                                <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setErrorRotacionarRodizio("");
+                                    setRodizioParaRotacionar(rodizio);
+                                  }}
+                                  disabled={
+                                    rotacionandoRodizioId ===
+                                    rodizio._id
+                                  }
+                                  className="min-h-10 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#b7dc58] px-4 text-sm font-bold transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {rotacionandoRodizioId ===
+                                  rodizio._id
+                                    ? "Rotacionando..."
+                                    : "↻ Rotacionar"}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    abrirDetalhesRodizio(
+                                      rodizio._id
+                                    )
+                                  }
+                                  disabled={loadingRodizioDetalhe}
+                                  className="min-h-10 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-4 text-sm font-bold transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Ver detalhes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setErrorExcluirRodizio("");
+                                    setRodizioParaExcluir(rodizio);
+                                  }}
+                                  disabled={
+                                    excluindoRodizioId === rodizio._id
+                                  }
+                                  className="min-h-10 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#ff6b5f] px-4 text-sm font-bold transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Excluir
+                                </button>
+                                </div>
                               )}
                             </div>
 
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
-                                Função
-                              </p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full min-w-[420px] border-collapse">
+                                <thead>
+                                  <tr className="border-y border-[#deded9] bg-white text-left text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                                    <th className="w-1/2 px-5 py-3">
+                                      Função
+                                    </th>
+                                    <th className="w-1/2 px-5 py-3">
+                                      Membro
+                                    </th>
+                                  </tr>
+                                </thead>
 
-                              <p className="mt-1 font-semibold lg:mt-0">
-                                {rodizio.funcao?.nome ||
-                                  "Função não informada"}
-                              </p>
+                                <tbody>
+                                  {rodizio.atribuicoes?.length ? (
+                                    rodizio.atribuicoes.map(
+                                      (atribuicao) => (
+                                        <tr
+                                          key={atribuicao._id}
+                                          className="border-b border-[#deded9] last:border-b-0"
+                                        >
+                                          <td className="px-5 py-3 text-sm font-semibold">
+                                            {atribuicao.funcao
+                                              ?.nome || "—"}
+                                          </td>
+                                          <td className="px-5 py-3 text-sm font-semibold">
+                                            {atribuicao.membro
+                                              ?.usuario?.nome ||
+                                              atribuicao.membro
+                                                ?.nome ||
+                                              atribuicao.membro
+                                                ?.usuario
+                                                ?.email ||
+                                              "—"}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )
+                                  ) : (
+                                    <tr>
+                                      <td
+                                        colSpan="2"
+                                        className="px-5 py-4 text-sm text-[#686864]"
+                                      >
+                                        Nenhum membro ou função associado.
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
                             </div>
-
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864] lg:hidden">
-                                Período
-                              </p>
-
-                              <p className="mt-1 text-sm font-medium lg:mt-0">
-                                {formatarPeriodo(
-                                  rodizio.dataInicio,
-                                  rodizio.dataFim
-                                )}
-                              </p>
-
-                              <span className="mt-2 inline-flex rounded-full border border-[#111111] bg-[#f8f7f4] px-3 py-1 text-xs font-bold">
-                                {rodizio.ciclo ||
-                                  "Mensal"}
-                              </span>
-                            </div>
-
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  abrirDetalhesRodizio(
-                                    rodizio._id
-                                  )
-                                }
-                                disabled={
-                                  loadingRodizioDetalhe
-                                }
-                                className="cursor-pointer text-sm font-bold underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Ver detalhes
-                              </button>
-                            </div>
-                          </div>
+                          </article>
                         ))}
                       </div>
                     )}
@@ -2085,7 +2384,8 @@ export default function Organizacao() {
         </div>
       )}
 
-      {modalAgendarRodizioAberto && (
+      {modalAgendarRodizioAberto &&
+        usuarioPodeGerenciarRodizios && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
           onMouseDown={(e) => {
@@ -2102,84 +2402,20 @@ export default function Organizacao() {
               </div>
 
               <h2 className="font-['Space_Grotesk',Arial,sans-serif] text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
-                Agende uma
+                Crie uma
                 <br />
                 rotação.
               </h2>
 
               <p className="mt-4 text-sm leading-relaxed text-[#686864]">
-                Escolha quem participará, qual função exercerá e durante qual período.
+                Defina o ciclo e o período. Membros e funções não são selecionados nesta etapa.
               </p>
             </div>
 
             <form onSubmit={handleAgendarRodizio}>
               <label
-                htmlFor="membro-rodizio"
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
-              >
-                membro
-              </label>
-
-              <select
-                id="membro-rodizio"
-                value={membroRodizio}
-                onChange={(e) => {
-                  setmembroRodizio(e.target.value);
-                  setErrorRodizios("");
-                }}
-                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
-              >
-                <option value="">
-                  Selecione um membro
-                </option>
-
-                {membros.map((membro) => (
-                  <option
-                    key={membro._id}
-                    value={membro._id}
-                  >
-                    {membro.usuario?.nome ||
-                      membro.nome ||
-                      membro.usuario?.email ||
-                      membro.email ||
-                      "Usuário"}
-                  </option>
-                ))}
-              </select>
-
-              <label
-                htmlFor="funcao-rodizio"
-                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
-              >
-                Função
-              </label>
-
-              <select
-                id="funcao-rodizio"
-                value={funcaoRodizio}
-                onChange={(e) => {
-                  setFuncaoRodizio(e.target.value);
-                  setErrorRodizios("");
-                }}
-                className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none"
-              >
-                <option value="">
-                  Selecione uma função
-                </option>
-
-                {funcoes.map((funcao) => (
-                  <option
-                    key={funcao._id}
-                    value={funcao._id}
-                  >
-                    {funcao.nome}
-                  </option>
-                ))}
-              </select>
-
-              <label
                 htmlFor="ciclo-rodizio"
-                className="mb-2 mt-6 block text-xs font-bold uppercase tracking-[0.08em]"
+                className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
               >
                 Ciclo
               </label>
@@ -2282,11 +2518,150 @@ export default function Organizacao() {
                   className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {agendandoRodizio
-                    ? "Agendando..."
-                    : "Agendar rodízio →"}
+                    ? "Criando..."
+                    : "Criar rodízio →"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {rodizioParaRotacionar && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !rotacionandoRodizioId
+            ) {
+              setRodizioParaRotacionar(null);
+              setErrorRotacionarRodizio("");
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmar-rotacao-titulo"
+            className="w-full max-w-[480px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8"
+          >
+            <div className="mb-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#b7dc58]" />
+              Rotação manual
+            </div>
+
+            <h2
+              id="confirmar-rotacao-titulo"
+              className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]"
+            >
+              Rotacionar este rodízio?
+            </h2>
+
+            <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+              Tem certeza que deseja rotacionar? Cada pessoa avançará para a próxima função na ordem da tabela. Lembre-se que o rodízio atualiza automáticamente de acordo como ciclo definido.
+            </p>
+
+            {errorRotacionarRodizio && (
+              <div className="mt-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                {errorRotacionarRodizio}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setRodizioParaRotacionar(null);
+                  setErrorRotacionarRodizio("");
+                }}
+                disabled={Boolean(rotacionandoRodizioId)}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarRotacaoManual}
+                disabled={Boolean(rotacionandoRodizioId)}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#b7dc58] px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {rotacionandoRodizioId
+                  ? "Rotacionando..."
+                  : "Sim, rotacionar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rodizioParaExcluir && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !excluindoRodizioId
+            ) {
+              setRodizioParaExcluir(null);
+              setErrorExcluirRodizio("");
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmar-exclusao-rodizio-titulo"
+            className="w-full max-w-[480px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8"
+          >
+            <div className="mb-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
+              Excluir rodízio
+            </div>
+
+            <h2
+              id="confirmar-exclusao-rodizio-titulo"
+              className="font-['Space_Grotesk',Arial,sans-serif] text-3xl font-bold tracking-[-0.04em]"
+            >
+              Excluir este rodízio?
+            </h2>
+
+            <p className="mt-4 text-sm leading-relaxed text-[#686864]">
+              Esta ação excluirá permanentemente o rodízio, incluindo suas
+              linhas, membros e funções associadas. Deseja continuar?
+            </p>
+
+            {errorExcluirRodizio && (
+              <div className="mt-5 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                {errorExcluirRodizio}
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setRodizioParaExcluir(null);
+                  setErrorExcluirRodizio("");
+                }}
+                disabled={Boolean(excluindoRodizioId)}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarExclusaoRodizio}
+                disabled={Boolean(excluindoRodizioId)}
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#ff6b5f] px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {excluindoRodizioId
+                  ? "Excluindo..."
+                  : "Sim, excluir rodízio"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2295,12 +2670,18 @@ export default function Organizacao() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111111]/50 px-5 py-8 backdrop-blur-sm"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
+            if (
+              e.target === e.currentTarget &&
+              !alterandoAtribuicoes &&
+              !salvandoDetalhesRodizio
+            ) {
               setRodizioSelecionado(null);
+              setErrorAtribuicoes("");
+              setErrorDetalhesRodizio("");
             }
           }}
         >
-          <div className="w-full max-w-[520px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
+          <div className="w-full max-w-[760px] rounded-[24px] border-2 border-[#111111] bg-white p-7 shadow-[10px_12px_0_#111111] sm:p-8">
             <div className="mb-7">
               <div className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#8eb9ff]" />
@@ -2315,85 +2696,288 @@ export default function Organizacao() {
             </div>
 
             <div className="grid gap-5">
-              <div className="rounded-[14px] border-2 border-[#111111] bg-[#f8f7f4] p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                  membro
-                </p>
+              <section className="overflow-hidden rounded-[14px] border-2 border-[#111111]">
+                <div className="flex flex-col gap-3 border-b-2 border-[#111111] bg-[#f8f7f4] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold">
+                      Pessoas e funções
+                    </h3>
 
-                <p className="mt-2 font-['Space_Grotesk',Arial,sans-serif] text-xl font-bold">
-                  {obterNomemembro(
-                    rodizioSelecionado
-                  )}
-                </p>
+                    <p className="mt-1 text-sm text-[#686864]">
+                      Adicione linhas e escolha os valores. Membros e funções podem se repetir.
+                    </p>
+                  </div>
 
-                {rodizioSelecionado.membro
-                  ?.usuario?.email && (
-                  <p className="mt-1 text-sm text-[#686864]">
-                    {
-                      rodizioSelecionado
-                        .membro.usuario.email
-                    }
+                  <button
+                    type="button"
+                    onClick={adicionarLinhaAtribuicao}
+                    disabled={alterandoAtribuicoes}
+                    className="min-h-10 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-4 text-sm font-bold text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    + Adicionar linha
+                  </button>
+                </div>
+
+                {errorAtribuicoes && (
+                  <div className="m-4 rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d]">
+                    {errorAtribuicoes}
+                  </div>
+                )}
+
+                {rodizioSelecionado.atribuicoes?.length ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px] border-collapse">
+                      <thead>
+                        <tr className="border-b border-[#deded9] text-left text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
+                          <th className="px-4 py-3">Função</th>
+                          <th className="px-4 py-3">Membro</th>
+                          <th className="w-[130px] px-4 py-3">Ação</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {rodizioSelecionado.atribuicoes.map(
+                          (atribuicao) => (
+                            <tr
+                              key={atribuicao._id}
+                              className="border-b border-[#deded9] last:border-b-0"
+                            >
+                              <td className="px-4 py-3">
+                                <select
+                                  aria-label="Função da linha"
+                                  value={
+                                    atribuicao.funcao?._id ||
+                                    atribuicao.funcao ||
+                                    ""
+                                  }
+                                  disabled={alterandoAtribuicoes}
+                                  onChange={(e) =>
+                                    atualizarCelulaAtribuicao(
+                                      atribuicao._id,
+                                      "funcaoId",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full cursor-pointer rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <option value="">
+                                    Sem função
+                                  </option>
+
+                                  {funcoes.map((funcao) => (
+                                    <option
+                                      key={funcao._id}
+                                      value={funcao._id}
+                                    >
+                                      {funcao.nome}
+                                    </option>
+                                  ))}
+                                </select>
+                                {atribuicao.funcao && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      atualizarCelulaAtribuicao(
+                                        atribuicao._id,
+                                        "funcaoId",
+                                        ""
+                                      )
+                                    }
+                                    disabled={alterandoAtribuicoes}
+                                    className="mt-2 cursor-pointer text-xs font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Remover função
+                                  </button>
+                                )}
+                              </td>
+
+                              <td className="px-4 py-3">
+                                <select
+                                  aria-label="Membro da linha"
+                                  value={
+                                    atribuicao.membro?._id ||
+                                    atribuicao.membro ||
+                                    ""
+                                  }
+                                  disabled={alterandoAtribuicoes}
+                                  onChange={(e) =>
+                                    atualizarCelulaAtribuicao(
+                                      atribuicao._id,
+                                      "membroId",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full cursor-pointer rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <option value="">
+                                    Sem membro
+                                  </option>
+
+                                  {membros.map((membro) => (
+                                    <option
+                                      key={membro._id}
+                                      value={membro._id}
+                                    >
+                                      {membro.usuario?.nome ||
+                                        membro.nome ||
+                                        membro.usuario
+                                          ?.email ||
+                                        membro.email ||
+                                        "Usuário"}
+                                    </option>
+                                  ))}
+                                </select>
+                                {atribuicao.membro && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      atualizarCelulaAtribuicao(
+                                        atribuicao._id,
+                                        "membroId",
+                                        ""
+                                      )
+                                    }
+                                    disabled={alterandoAtribuicoes}
+                                    className="mt-2 cursor-pointer text-xs font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Remover membro
+                                  </button>
+                                )}
+                              </td>
+
+                              <td className="px-4 py-3">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removerLinhaAtribuicao(
+                                      atribuicao._id
+                                    )
+                                  }
+                                  disabled={alterandoAtribuicoes}
+                                  className="cursor-pointer text-sm font-bold text-[#b9362d] underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Remover linha
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="px-4 py-5 text-sm text-[#686864]">
+                    Ainda não há linhas. Adicione uma para começar a montar o rodízio.
                   </p>
                 )}
-              </div>
+              </section>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                    Função
-                  </p>
+              <form
+                id="editar-detalhes-rodizio"
+                onSubmit={salvarDetalhesRodizio}
+                className="grid gap-4 sm:grid-cols-3"
+              >
+                <div>
+                  <label
+                    htmlFor="ciclo-rodizio-editado"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+                  >
+                    Tipo do ciclo
+                  </label>
 
-                  <p className="mt-2 font-bold">
-                    {rodizioSelecionado.funcao?.nome ||
-                      "Função não informada"}
-                  </p>
-
-                  {rodizioSelecionado.funcao
-                    ?.descricao && (
-                    <p className="mt-2 text-sm leading-relaxed text-[#686864]">
-                      {
-                        rodizioSelecionado.funcao
-                          .descricao
-                      }
-                    </p>
-                  )}
+                  <select
+                    id="ciclo-rodizio-editado"
+                    value={cicloEditado}
+                    onChange={(e) =>
+                      setCicloEditado(e.target.value)
+                    }
+                    disabled={salvandoDetalhesRodizio}
+                    className="w-full cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <option value="Diário">Diário</option>
+                    <option value="Semanal">Semanal</option>
+                    <option value="Quinzenal">Quinzenal</option>
+                    <option value="Mensal">Mensal</option>
+                    <option value="Anual">Anual</option>
+                  </select>
                 </div>
 
-                <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                    Ciclo
-                  </p>
+                <div>
+                  <label
+                    htmlFor="data-inicio-rodizio-editada"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+                  >
+                    Data de início
+                  </label>
 
-                  <span className="mt-2 inline-flex rounded-full border border-[#111111] bg-[#b7dc58] px-3 py-1 text-xs font-bold">
-                    {rodizioSelecionado.ciclo ||
-                      "Mensal"}
-                  </span>
+                  <input
+                    id="data-inicio-rodizio-editada"
+                    type="datetime-local"
+                    value={dataInicioEditada}
+                    onChange={(e) =>
+                      setDataInicioEditada(e.target.value)
+                    }
+                    disabled={salvandoDetalhesRodizio}
+                    className="w-full rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
                 </div>
-              </div>
 
-              <div className="rounded-[14px] border-2 border-[#111111] bg-white p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#686864]">
-                  Período
-                </p>
+                <div>
+                  <label
+                    htmlFor="data-fim-rodizio-editada"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.08em]"
+                  >
+                    Data de término
+                  </label>
 
-                <p className="mt-2 font-bold">
-                  {formatarPeriodo(
-                    rodizioSelecionado.dataInicio,
-                    rodizioSelecionado.dataFim
-                  )}
-                </p>
-              </div>
+                  <input
+                    id="data-fim-rodizio-editada"
+                    type="datetime-local"
+                    value={dataFimEditada}
+                    onChange={(e) =>
+                      setDataFimEditada(e.target.value)
+                    }
+                    disabled={salvandoDetalhesRodizio}
+                    className="w-full rounded-[9px] border-2 border-[#111111] bg-white px-3 py-3 text-sm font-medium outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </div>
+
+                {errorDetalhesRodizio && (
+                  <div className="rounded-lg border border-[#ff6b5f] bg-[#fff1ef] px-3 py-2 text-sm font-medium text-[#b9362d] sm:col-span-3">
+                    {errorDetalhesRodizio}
+                  </div>
+                )}
+              </form>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={() =>
-                  setRodizioSelecionado(null)
+                onClick={() => {
+                  setRodizioSelecionado(null);
+                  setErrorAtribuicoes("");
+                  setErrorDetalhesRodizio("");
+                }}
+                disabled={
+                  alterandoAtribuicoes ||
+                  salvandoDetalhesRodizio
                 }
                 className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-white px-5 font-bold text-[#111111] transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111]"
               >
                 Fechar
+              </button>
+              <button
+                type="submit"
+                form="editar-detalhes-rodizio"
+                disabled={
+                  salvandoDetalhesRodizio ||
+                  alterandoAtribuicoes
+                }
+                className="min-h-12 cursor-pointer rounded-[9px] border-2 border-[#111111] bg-[#111111] px-5 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0_#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {salvandoDetalhesRodizio
+                  ? "Salvando..."
+                  : "Salvar alterações"}
               </button>
             </div>
           </div>

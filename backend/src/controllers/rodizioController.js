@@ -37,6 +37,64 @@ const criarRodizio = async (req, res) => {
   }
 };
 
+const atualizarRodizio = async (req, res) => {
+  try {
+    const { id: organizacaoId, rodizioId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio = await rodizioService.atualizarRodizio(
+      organizacaoId,
+      rodizioId,
+      req.body || {},
+      usuarioId
+    );
+
+    return res.status(200).json({
+      mensagem: 'Rodízio atualizado com sucesso.',
+      rodizio,
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar rodízio:', error);
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao atualizar rodízio.',
+    });
+  }
+};
+
+const excluirRodizio = async (req, res) => {
+  try {
+    const { id: organizacaoId, rodizioId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    await rodizioService.excluirRodizio(
+      organizacaoId,
+      rodizioId,
+      usuarioId
+    );
+
+    return res.status(200).json({
+      mensagem: 'Rodízio excluído com sucesso.',
+    });
+  } catch (error) {
+    console.error('Erro ao excluir rodízio:', error);
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao excluir rodízio.',
+    });
+  }
+};
+
 const listarRodizios = async (req, res) => {
   try {
     const { id: organizacaoId } = req.params;
@@ -255,8 +313,138 @@ const removerFuncao = async (req, res) => {
   }
 };
 
+const adicionarAtribuicao = async (req, res) => {
+  try {
+    const { id: organizacaoId, rodizioId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio =
+      await rodizioService.adicionarAtribuicao(
+        organizacaoId,
+        rodizioId,
+        req.body || {},
+        usuarioId
+      );
+
+    return res.status(201).json({
+      mensagem: 'Linha adicionada ao rodízio com sucesso.',
+      rodizio,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao adicionar linha.',
+    });
+  }
+};
+
+const atualizarAtribuicao = async (req, res) => {
+  try {
+    const {
+      id: organizacaoId,
+      rodizioId,
+      atribuicaoId,
+    } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio =
+      await rodizioService.atualizarAtribuicao(
+        organizacaoId,
+        rodizioId,
+        atribuicaoId,
+        req.body || {},
+        usuarioId
+      );
+
+    return res.status(200).json({
+      mensagem: 'Linha atualizada com sucesso.',
+      rodizio,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao atualizar linha.',
+    });
+  }
+};
+
+const removerAtribuicao = async (req, res) => {
+  try {
+    const {
+      id: organizacaoId,
+      rodizioId,
+      atribuicaoId,
+    } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio =
+      await rodizioService.removerAtribuicao(
+        organizacaoId,
+        rodizioId,
+        atribuicaoId,
+        usuarioId
+      );
+
+    return res.status(200).json({
+      mensagem: 'Linha removida do rodízio com sucesso.',
+      rodizio,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao remover linha.',
+    });
+  }
+};
+
+const rotacionarRodizio = async (req, res) => {
+  try {
+    const { id: organizacaoId, rodizioId } = req.params;
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        mensagem: 'Usuário não autenticado.',
+      });
+    }
+
+    const rodizio = await rodizioService.rotacionarRodizio(
+      organizacaoId,
+      rodizioId,
+      usuarioId
+    );
+
+    return res.status(200).json({
+      mensagem: 'Rodízio rotacionado com sucesso.',
+      rodizio,
+    });
+  } catch (error) {
+    console.error('Erro ao rotacionar rodízio:', error);
+    return res.status(error.status || 500).json({
+      mensagem: error.message || 'Erro ao rotacionar rodízio.',
+    });
+  }
+};
+
 module.exports = {
   criarRodizio,
+  atualizarRodizio,
+  excluirRodizio,
   listarRodizios,
   listarMinhaRotacaoAtual,
   buscarRodizioPorId,
@@ -264,4 +452,8 @@ module.exports = {
   removerMembro,
   adicionarFuncao,
   removerFuncao,
+  adicionarAtribuicao,
+  atualizarAtribuicao,
+  removerAtribuicao,
+  rotacionarRodizio,
 };

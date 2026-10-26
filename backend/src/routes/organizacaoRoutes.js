@@ -10,12 +10,10 @@ const authMiddleware = require('../middlewares/authMiddleware');
 /**
  * @swagger
  * tags:
- *   name: Organizações
- *   description: Endpoints relacionados às organizações
- *
- * tags:
- *   name: Funções
- *   description: Gerenciamento de funções das organizações
+ *   - name: Organizações
+ *     description: Endpoints relacionados às organizações
+ *   - name: Funções
+ *     description: Gerenciamento de funções das organizações
  */
 
 router.use(authMiddleware);
