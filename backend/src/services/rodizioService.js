@@ -4,6 +4,12 @@ const Rodizio = require('../models/Rodizio');
 const MembroOrganizacao = require('../models/MembroOrganizacao');
 const Funcao = require('../models/Funcao');
 
+const { randomUUID } = require('node:crypto');
+
+const {
+  publicarEvento,
+} = require('../messaging/publishers/eventoPublisher');
+
 const {
   validarAdminOuModerador,
   validarMembro,
@@ -258,17 +264,41 @@ const criarRodizio = async (
     organizacao: organizacaoId,
     membros: [],
     funcoes: [],
-    atribuicoes: [],
     ciclo,
     dataInicio: inicio,
     dataFim: fim,
   });
 
-  return buscarRodizioPorId(
+  const rodizioCompleto = await buscarRodizioPorId(
     rodizio._id,
     organizacaoId,
     usuarioId
   );
+  
+  try {
+    await publicarEvento({
+      eventId: randomUUID(),
+      eventType: 'ROTACAO_AGENDADA',
+      occurredAt: new Date().toISOString(),
+      data: {
+        rodizioId: rodizio._id.toString(),
+        organizacaoId: organizacaoId.toString(),
+        ciclo,
+        dataInicio: inicio.toISOString(),
+        dataFim: fim.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error(
+      '[RodizioService] Falha ao publicar evento de agendamento:',
+      {
+        rodizioId: rodizio._id.toString(),
+        erro: error.message,
+      }
+    );
+  }
+
+  return rodizioCompleto;
 };
 
 const atualizarRodizio = async (
