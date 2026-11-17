@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Main from './pages/Main';
 import Organizacao from './pages/Organizacao';
+import Perfil from './pages/Perfil';
 import './index.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/main" element={<Main/>} />
           <Route path="/organizacao/:id" element={<Organizacao />} />
+          <Route path="/perfil" element={<Perfil />} />
         </Routes>
       </div>
     </Router>

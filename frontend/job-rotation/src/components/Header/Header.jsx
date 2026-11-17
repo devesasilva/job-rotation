@@ -14,11 +14,11 @@ const Header = () => {
       // Remove o token e redireciona para login
       localStorage.removeItem('token');
       navigate('/login');
-    }else if (item === 'Cadastro'){
-      //
-      navigate('/register')
-    }
-     else {
+    } else if (item === 'Cadastro') {
+      navigate('/register');
+    } else if (item === 'Perfil') {
+      navigate('/perfil');
+    } else {
       alert(`Navegando para: ${item}`);
       setTimeout(() => setIsMenuOpen(false), 100);
     }
@@ -46,12 +46,12 @@ const Header = () => {
       {/* Sidebar */}
       <div className={`sidebar ${isMenuOpen ? 'active' : ''}`}>
         <ul className="sidebar-menu">
-          <li><a href="#" onClick={() => handleMenuItemClick('Perfil')}>👤 Meu Perfil</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Cadastro')}>⚙️ Cadastro</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Histórico')}>📊 Histórico de Rotações</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Ajuda')}>❓ Ajuda</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Sobre')}>ℹ️ Sobre</a></li>
-          <li><a href="#" onClick={() => handleMenuItemClick('Sair')} className="exit-item">🚪 Sair</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Perfil')}>Meu Perfil</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Cadastro')}>Cadastro</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Histórico')}>Histórico de Rotações</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Ajuda')}>Ajuda</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Sobre')}>Sobre</a></li>
+          <li><a href="#" onClick={() => handleMenuItemClick('Sair')} className="exit-item">Sair</a></li>
         </ul>
       </div>
 
