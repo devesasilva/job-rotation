@@ -1,41 +1,42 @@
-# 🔁 Job Rotation - Movimentando equipes, capacitando pessoas | Ambiente de Desenvolvimento ⚙️
-Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de Desenvolvimento de Software Multiplataforma da Fatec Cotia. O software a ser desenvolvido possui foco em  ser inovador, auxiliando empresas na implementação de programas de Job Rotation, automatizando os processos de rotação de funções e aplicando elementos de gamificação para engajar os participantes, promovendo a capacitação de colaboradores e fornecendo feedbacks transparentes.
+# 🔁 Job Rotation - Faça o trabalho circular. 
+O Job Rotation é uma plataforma desenvolvida para facilitar a organização e o gerenciamento de rodízios de funções e responsabilidades em equipes.
 
-## 🚀 Tecnologias Utilizadas
+A solução permite que organizações cadastrem seus membros, definam funções e criem ciclos de rodízio, organizando as atribuições e facilitando a alternância de responsabilidades entre os participantes.
 
-### Backend
-- Node.js
-- Express.js
-- MongoDB
-- JWT (autenticação)
-- RabbitMQ
-- Azure Blob Storage
+Com o objetivo de reduzir controles manuais e a dependência de planilhas, o Job Rotation centraliza o gerenciamento dos rodízios em um único ambiente, proporcionando mais organização, praticidade e visibilidade sobre as atividades de cada participante.
 
-### Frontend
-- Node.js
-- React.js
-- TailwindCSS
+A plataforma foi pensada para atender empresas, equipes de projetos, ONGs, comunidades e organizações de diferentes tamanhos que desejam distribuir responsabilidades de maneira estruturada.
 
-### Outros
-- Git
-- GitHub
-- Jira (Scrum & Kanban)
+**Projeto Integrador — Curso de Desenvolvimento de Software Multiplataforma | Fatec Cotia.**
 
-## 📁 Estrutura do Projeto
+## 🎯 O que é possível fazer?
 
-## 🛠️ Como rodar localmente
-### Backend
-- `npm install` para instalar todas as dependências do projeto
-- `npm start` para rodar o servidor na porta 3001
+- Criar e gerenciar organizações.
+- Cadastrar e administrar membros e seus níveis de acesso.
+- Organizar equipes e setores.
+- Cadastrar funções e suas respectivas descrições.
+- Criar ciclos de rodízio com diferentes periodicidades.
+- Definir datas de início e término dos ciclos.
+- Associar participantes às funções disponíveis.
+- Adicionar ou remover participantes e funções durante o gerenciamento dos rodízios.
+- Executar rotações e consultar as atribuições atuais.
 
-### Frontend
-- `npm install` para instalar todas as dependências do projeto
-- `npm run dev` para rodar o servidor na porta 5173
+## 👥 Para quem é o Job Rotation?
 
-## 🌱 Como contribuir
+O Job Rotation pode ser utilizado por diferentes tipos de grupos que precisam organizar a distribuição de responsabilidades:
 
-## 👥 Integrantes
+- Pequenas empresas: alternância de funções entre colaboradores.
+- Times e departamentos: distribuição periódica de responsabilidades entre integrantes.
+- ONGs e projetos sociais: organização de atividades e responsabilidades entre voluntários e participantes.
+- Organizações religiosas: planejamento de escalas e rodízios de funções.
+- Qualquer grupo: facilita a divisão de responsabilidades e ajuda a organizar o revezamento.
+
+## 🖥️ Conheça o Job Rotation
+<img width="959" height="533" alt="image" src="https://github.com/user-attachments/assets/26603577-0a72-4d80-9174-56c8501d2b59" />
+Link: 
+
+## 👷‍♀️ Integrantes
 | Nome     | GitHub |
 |----------|----------------------------------------|
-| Laíne    | [@devesasilva](https://github.com/devesasilva)     |
+| Laíne    | [@laine](https://github.com/devesasilva)     |
 | Melissa  | [@melissa](https://github.com/melissaromao)   |
