@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import NotificationBell from "../components/NotificationBell";
 
 const API = import.meta.env.VITE_BACKEND_API;
 
@@ -446,6 +447,7 @@ export default function Main() {
 
           {/* Usuário + Logout */}
           <div className="flex items-center gap-3">
+            <NotificationBell />
 
             <div className="hidden text-right sm:block">
               <p className="text-xs font-bold text-[#111111]">

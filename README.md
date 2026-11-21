@@ -8,13 +8,18 @@ Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de D
 - Express.js
 - MongoDB
 - JWT (autenticação)
+- RabbitMQ
+- Azure Blob Storage
 
 ### Frontend
+- Node.js
 - React.js
+- TailwindCSS
 
 ### Outros
-- Git e GitHub
-- Jira
+- Git
+- GitHub
+- Jira (Scrum & Kanban)
 
 ## 📁 Estrutura do Projeto
 
@@ -22,7 +27,11 @@ Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de D
 ### Backend
 - `npm install` para instalar todas as dependências do projeto
 - `npm start` para rodar o servidor na porta 3001
+
 ### Frontend
+- `npm install` para instalar todas as dependências do projeto
+- `npm run dev` para rodar o servidor na porta 5173
+
 ## 🌱 Como contribuir
 
 ## 👥 Integrantes
@@ -30,4 +39,3 @@ Projeto desenvolvido em grupo como parte do Projeto Integrador para o curso de D
 |----------|----------------------------------------|
 | Laíne    | [@devesasilva](https://github.com/devesasilva)     |
 | Melissa  | [@melissa](https://github.com/melissaromao)   |
-| Aline    | [@aline](https://github.com/RosendoAline) |

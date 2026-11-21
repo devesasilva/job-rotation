@@ -7,6 +7,7 @@ const rodizioRoutes = require('./rodizioRoutes');
 const setorRoutes = require('./setorRoutes');
 const organizacaoRoutes = require('./organizacaoRoutes');
 const userRoutes = require('./userRoutes');
+const notificacaoRoutes = require('./notificacaoRoutes');
 
 router.get('/api', (req, res) => {
   res.send('API está funcionando! 🚀');
@@ -19,6 +20,7 @@ router.use('/setores', setorRoutes);
 router.use('/organizacoes', organizacaoRoutes);
 router.use('/api/users', userRoutes);
 router.use('/users', userRoutes);
+router.use('/api/notificacoes', notificacaoRoutes);
 
 module.exports = router;
 
