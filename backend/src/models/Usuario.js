@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const avatarSchema = new mongoose.Schema({
+  blobName: { type: String, default: null },
+  url: { type: String, default: null },          // URL canônica sem SAS
+  contentType: { type: String, default: null },
+  size: { type: Number, default: null },
+  updatedAt: { type: Date, default: null }
+}, { _id: false });
+
 const usuarioSchema = new mongoose.Schema({
   _id: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -17,6 +25,10 @@ const usuarioSchema = new mongoose.Schema({
   senha: {
     type: String,
     required: true,
+  },
+  avatar: {
+    type: avatarSchema,
+    default: null
   }
 }, { timestamps: true });
 

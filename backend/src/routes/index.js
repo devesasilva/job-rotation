@@ -6,6 +6,8 @@ const equipeRoutes = require('./equipeRoutes');
 const rodizioRoutes = require('./rodizioRoutes');
 const setorRoutes = require('./setorRoutes');
 const organizacaoRoutes = require('./organizacaoRoutes');
+const userRoutes = require('./userRoutes');
+const notificacaoRoutes = require('./notificacaoRoutes');
 
 router.get('/api', (req, res) => {
   res.send('API está funcionando! 🚀');
@@ -16,6 +18,9 @@ router.use('/equipes', equipeRoutes);
 router.use('/rodizios', rodizioRoutes);
 router.use('/setores', setorRoutes);
 router.use('/organizacoes', organizacaoRoutes);
+router.use('/api/users', userRoutes);
+router.use('/users', userRoutes);
+router.use('/api/notificacoes', notificacaoRoutes);
 
 module.exports = router;
 
@@ -40,7 +45,7 @@ module.exports = router;
 /**
  * @swagger
  * /auth:
- *   $ref: './authRoutes.js'   # Aqui você pode linkar documentação externa se quiser modularizar
+ *   $ref: './authRoutes.js'
  */
 
 /**
@@ -65,4 +70,10 @@ module.exports = router;
  * @swagger
  * /organizacoes:
  *   $ref: './organizacaoRoutes.js'
+ */
+
+/**
+ * @swagger
+ * /api/users:
+ *   $ref: './userRoutes.js'
  */

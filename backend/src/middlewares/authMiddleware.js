@@ -4,14 +4,17 @@ const tokensInvalidos = new Set();
 
 const authMiddleware = (req, res, next) => {
     const authHeader = req.header('Authorization');
+    const tokenQuery = req.query?.token;
 
-    if (!authHeader) {
+    if (!authHeader && !tokenQuery) {
         return res.status(401).json({
             mensagem: 'Acesso negado. Token não fornecido.'
         });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader
+        ? authHeader.split(' ')[1]
+        : tokenQuery;
 
     if (!token) {
         return res.status(401).json({
