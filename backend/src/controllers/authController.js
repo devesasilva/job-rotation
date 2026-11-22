@@ -2,6 +2,7 @@ const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { generateBlobReadSasUrl } = require('../../config/azureStorage');
 
 const register = async (req, res) => {
     const { nome, email, senha } = req.body;
@@ -99,7 +100,19 @@ const me = async (req, res) => {
             });
         }
 
-        return res.status(200).json(usuario);
+        const usuarioObj = usuario.toObject();
+
+        if (usuario.avatar && usuario.avatar.blobName) {
+            try {
+                usuarioObj.avatarUrl = await generateBlobReadSasUrl(usuario.avatar.blobName);
+            } catch (err) {
+                usuarioObj.avatarUrl = null;
+            }
+        } else {
+            usuarioObj.avatarUrl = null;
+        }
+
+        return res.status(200).json(usuarioObj);
 
     } catch (error) {
         return res.status(500).json({

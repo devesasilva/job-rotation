@@ -1,6 +1,8 @@
 
 require('dotenv').config();
 
+const ConexaoDB = require('../config/db');
+
 const {
   iniciarConsumer,
 } = require('../src/messaging/consumers/eventoConsumer');
@@ -13,6 +15,7 @@ const iniciarWorker = async () => {
   try {
     console.log('[Worker] Inicializando consumidor...');
 
+    await ConexaoDB();
     await iniciarConsumer();
 
   } catch (error) {

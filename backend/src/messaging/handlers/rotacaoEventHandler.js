@@ -1,4 +1,6 @@
-
+const {
+  criarNotificacoesDoEvento,
+} = require('../../services/notificacaoService');
 const processarEvento = async (evento) => {
   console.log(
     '[EventHandler] Iniciando processamento:',
@@ -41,6 +43,7 @@ const processarRotacaoAgendada = async (evento) => {
       dataFim: evento.data.dataFim,
     }
   );
+  await criarNotificacoesDoEvento(evento);
 };
 
 const processarRotacaoConcluida = async (evento) => {
@@ -53,6 +56,7 @@ const processarRotacaoConcluida = async (evento) => {
       organizacaoId,
     }
   );
+  await criarNotificacoesDoEvento(evento);
 };
 
 module.exports = {

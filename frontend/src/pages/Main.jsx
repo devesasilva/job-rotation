@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import NotificationBell from "../components/NotificationBell";
 
 const API = import.meta.env.VITE_BACKEND_API;
 
@@ -446,6 +447,7 @@ export default function Main() {
 
           {/* Usuário + Logout */}
           <div className="flex items-center gap-3">
+            <NotificationBell />
 
             <div className="hidden text-right sm:block">
               <p className="text-xs font-bold text-[#111111]">
@@ -460,13 +462,20 @@ export default function Main() {
             {/* Avatar */}
             <button
               type="button"
-              className="grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold transition-transform duration-200 hover:-translate-y-1 hover:shadow-[3px_3px_0_#111111]"
-              title={
-                usuario?.nome || "Usuário"
-              }
+              onClick={() => navigate('/perfil')}
+              className="grid h-[42px] w-[42px] cursor-pointer place-items-center overflow-hidden rounded-full border-2 border-[#111111] bg-[#ffd84d] font-['Space_Grotesk',Arial,sans-serif] text-sm font-bold transition-transform duration-200 hover:-translate-y-1 hover:shadow-[3px_3px_0_#111111]"
+              title={usuario?.nome ? `Perfil de ${usuario.nome}` : "Meu perfil"}
             >
-              {obterIniciais(
-                usuario?.nome
+              {usuario?.avatarUrl ? (
+                <img
+                  src={usuario.avatarUrl}
+                  alt={usuario?.nome || "Foto de perfil"}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                obterIniciais(
+                  usuario?.nome
+                )
               )}
             </button>
 

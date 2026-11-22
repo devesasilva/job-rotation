@@ -63,6 +63,12 @@ const rodizioSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+
+    concluidoEm: {
+      type: Date,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
